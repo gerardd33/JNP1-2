@@ -206,6 +206,10 @@ void poset_add_edge_between(unsigned long id, unsigned long value1_id, unsigned 
 
 void poset_add_edges(unsigned long id, const std::vector<unsigned long>& from, const std::vector<unsigned long>& to) {
 
+    if (from.empty() || to.empty()) { // dk if necessary
+        return;
+    }
+
     for (unsigned long value1_id: from) {
         for (unsigned long value2_id : to) {
             poset_add_edge_between(id, value1_id, value2_id);
@@ -267,6 +271,11 @@ bool poset_del(unsigned long id, char const *value1, char const *value2) {
             unsigned long value1_id = posets[id].second.first[value1];
             unsigned long value2_id = posets[id].second.first[value2];
             delete_edge_to_neighbour(id, value1_id, value2_id);
+
+            std::vector<unsigned long> from = find_nodes_with_edge_to(id, value1_id);
+            std::vector<unsigned long> to = {value2_id};
+
+            poset_add_edges(id, from, to);
 
             return true;
         }
@@ -340,6 +349,79 @@ int main() {
     poset_delete(p1);
     poset_delete(p1);
     poset_delete(p1 + 1);
+
+    // harder cases
+
+    p1 = poset_new();
+    assert(poset_size(p1) == 0);
+    assert(poset_size(p1 + 1) == 0);
+    assert(!poset_insert(p1, NULL));
+
+    // 1
+    assert(poset_insert(p1, "A"));
+    assert(poset_insert(p1, "B"));
+    assert(poset_insert(p1, "C"));
+    assert(poset_add(p1, "A", "B"));
+    assert(poset_test(p1, "A", "B"));
+    assert(poset_add(p1, "B", "C"));
+    assert(poset_test(p1, "B", "C"));
+
+    assert(poset_test(p1, "A", "C"));
+    assert(!poset_add(p1, "A", "C"));
+    assert(!poset_del(p1, "A", "C"));
+    assert(poset_test(p1, "A", "C"));
+
+    assert(poset_del(p1, "B", "C"));
+    assert(poset_test(p1, "A", "C"));
+    assert(!poset_del(p1, "B", "C"));
+    assert(poset_test(p1, "A", "B"));
+    assert(!poset_test(p1, "B", "C"));
+    assert(poset_del(p1, "A", "B"));
+    assert(poset_test(p1, "A", "C"));
+    assert(!poset_test(p1, "A", "B"));
+
+    assert(poset_size(p1) == 3);
+    poset_clear(p1);
+    assert(poset_size(p1) == 0);
+    poset_delete(p1);
+    poset_delete(p1);
+
+
+    // 2
+    p1 = poset_new();
+    assert(poset_insert(p1, "C"));
+    assert(poset_insert(p1, "B"));
+    assert(poset_insert(p1, "A"));
+    assert(poset_add(p1, "A", "B"));
+    assert(poset_add(p1, "A", "C"));
+    assert(poset_add(p1, "B", "C"));
+    assert(poset_test(p1, "A", "C"));
+    assert(poset_test(p1, "B", "C"));
+    assert(poset_del(p1, "B", "C"));
+    assert(poset_test(p1, "A", "C"));
+    assert(poset_add(p1, "C", "B"));
+    assert(poset_test(p1, "C", "B"));
+    assert(poset_remove(p1, "B"));
+    assert(poset_test(p1, "A", "C"));
+    assert(!poset_test(p1, "C", "B"));
+
+    assert(poset_size(p1) == 2);
+
+    assert(!poset_remove(p1, "B"));
+    assert(poset_remove(p1, "C"));
+    assert(poset_size(p1) == 1);
+    assert(!poset_test(p1, "A", "C"));
+    assert(!poset_test(p1, "C", "A"));
+    assert(poset_test(p1, "A", "A"));
+    assert(!poset_test(p1, "B", "B"));
+    assert(!poset_test(p1, "C", "C"));
+
+    poset_delete(p1);
+
+
+
+
+
 
     return 0;
 }
