@@ -2,6 +2,7 @@
 #include <unordered_map>
 #include <vector>
 #include <queue>
+#include <cassert>
 #include "poset.h"
 
 #define NDEBUG
@@ -47,7 +48,7 @@ bool value_in_poset(unsigned long id, char const *value) {
 }
 
 bool is_valid_value(char const *value) {
-    return value != nullptr; // value cant be null, and thats it (?)
+    return value != nullptr; // value can't be null, and that's it (?)
 }
 
 size_t poset_size(unsigned long id) {
@@ -72,7 +73,7 @@ bool poset_insert(unsigned long id, char const *value) {
 
     if (poset_exists(id) && is_valid_value(value) && !value_in_poset(id, value)) {
 
-        std::string new_value = value;
+        std::string new_value(value);
         unsigned long new_id = posets[id].second.second.size();
 
         std::vector<unsigned long> empty_vec;
@@ -204,7 +205,7 @@ void poset_add_edge_between(unsigned long id, unsigned long value1_id, unsigned 
 
 void poset_add_edges(unsigned long id, const std::vector<unsigned long>& from, const std::vector<unsigned long>& to) {
 
-    for (unsigned long value1_id: from) {
+    for (unsigned long value1_id : from) {
         for (unsigned long value2_id : to) {
             poset_add_edge_between(id, value1_id, value2_id);
         }
@@ -214,7 +215,7 @@ void poset_add_edges(unsigned long id, const std::vector<unsigned long>& from, c
 bool poset_remove(unsigned long id, char const *value) {
 
     if (poset_exists(id) && is_valid_value(value) && value_in_poset(id, value)) {
-        //TODO: imporve this algorithm
+        //TODO: improve this algorithm
 
         // for now this slow algorithm, just to make sure it works
 
@@ -227,13 +228,12 @@ bool poset_remove(unsigned long id, char const *value) {
 
         posets[id].second.first.erase(value);
         posets[id].second.second[value_id].clear();
-        posets[id].first[value_id] = "";
+        posets[id].first[value_id].clear();
 
         std::vector<unsigned long> from = find_nodes_with_edge_to(id, value_id);
         std::vector<unsigned long>* to = &posets[id].second.second[value_id];
 
         delete_edges_from_to(id, from, value_id);
-
         poset_add_edges(id, from, *to);
 
         return true;
