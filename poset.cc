@@ -81,9 +81,9 @@ bool poset_insert(unsigned long id, char const *value) {
         posets[id].second.first.insert(std::make_pair(new_value, new_id));
         posets[id].second.second.push_back(empty_vec);
 
-        #ifndef NDEBUG
+#ifndef NDEBUG
         std::cerr << new_value << " " << new_id << "\n";
-        #endif
+#endif
         return true;
     }
 
