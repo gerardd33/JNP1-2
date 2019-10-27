@@ -6,8 +6,6 @@
 
 #define NDEBUG
 
-//using Id = unsigned long;
-
 using Values = std::vector<std::string>;
 using Values_ids = std::unordered_map<std::string, unsigned long>;
 using Adjacency_list = std::vector<std::vector<unsigned long>>;
@@ -206,10 +204,6 @@ void poset_add_edge_between(unsigned long id, unsigned long value1_id, unsigned 
 
 void poset_add_edges(unsigned long id, const std::vector<unsigned long>& from, const std::vector<unsigned long>& to) {
 
-    if (from.empty() || to.empty()) { // dk if necessary
-        return;
-    }
-
     for (unsigned long value1_id: from) {
         for (unsigned long value2_id : to) {
             poset_add_edge_between(id, value1_id, value2_id);
@@ -272,10 +266,14 @@ bool poset_del(unsigned long id, char const *value1, char const *value2) {
             unsigned long value2_id = posets[id].second.first[value2];
             delete_edge_to_neighbour(id, value1_id, value2_id);
 
-            std::vector<unsigned long> from = find_nodes_with_edge_to(id, value1_id);
-            std::vector<unsigned long> to = {value2_id};
+            std::vector<unsigned long> from1 = find_nodes_with_edge_to(id, value1_id);
+            std::vector<unsigned long> to1 = {value2_id};
 
-            poset_add_edges(id, from, to);
+            std::vector<unsigned long> from2 = {value1_id};
+            std::vector<unsigned long>* to2 = &posets[id].second.second[value2_id];
+
+            poset_add_edges(id, from1, to1);
+            poset_add_edges(id, from2, *to2);
 
             return true;
         }
@@ -397,6 +395,10 @@ int main() {
     assert(poset_add(p1, "B", "C"));
     assert(poset_test(p1, "A", "C"));
     assert(poset_test(p1, "B", "C"));
+    assert(poset_test(p1, "A", "C"));
+    assert(!poset_test(p1, "C", "A"));
+    assert(!poset_test(p1, "B", "A"));
+    assert(!poset_test(p1, "C", "B"));
     assert(poset_del(p1, "B", "C"));
     assert(poset_test(p1, "A", "C"));
     assert(poset_add(p1, "C", "B"));
@@ -419,9 +421,26 @@ int main() {
     poset_delete(p1);
 
 
+    p1 = poset_new();
 
-
-
+    assert(poset_insert(p1, "A"));
+    assert(poset_insert(p1, "B"));
+    assert(poset_insert(p1, "C"));
+    assert(poset_insert(p1, "D"));
+    assert(poset_add(p1, "A", "B"));
+    assert(poset_add(p1, "B", "C"));
+    assert(poset_add(p1, "A", "D"));
+    assert(poset_add(p1, "C", "D"));
+    assert(poset_test(p1, "A", "D"));
+    assert(!poset_del(p1, "D", "A"));
+    assert(!poset_del(p1, "A", "D"));
+    assert(poset_del(p1, "B", "C"));
+    assert(poset_test(p1, "B", "D"));
+    assert(poset_test(p1, "A", "D"));
+    assert(poset_add(p1, "C", "B"));
+    assert(poset_test(p1, "A", "B"));
+    assert(poset_test(p1, "C", "B"));
+    assert(!poset_del(p1, "A", "B"));
 
     return 0;
 }
