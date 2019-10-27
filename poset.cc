@@ -10,8 +10,7 @@
 using Values_list = std::vector<std::string>;
 using Values_ids = std::unordered_map<std::string, unsigned long>;
 using Adjacency_list = std::vector<std::vector<unsigned long>>;
-
-using Poset = std::pair<Values_list, std::pair<Values_ids, Adjacency_list>>;
+using Poset = std::tuple<Values_list, Values_ids, Adjacency_list>;
 
 unsigned long next_poset_id = 0;
 std::vector<Poset> posets;
@@ -19,15 +18,15 @@ std::vector<bool> deleted_posets;
 
 
 Values_list* get_poset_values_list(unsigned long poset_id) {
-    return &posets[poset_id].first;
+    return &std::get<0>(posets[poset_id]);
 }
 
 Values_ids* get_poset_values_ids(unsigned long poset_id) {
-    return &posets[poset_id].second.first;
+    return &std::get<1>(posets[poset_id]);
 }
 
 Adjacency_list* get_poset_adjacency_list(unsigned long poset_id) {
-    return &posets[poset_id].second.second;
+    return &std::get<2>(posets[poset_id]);
 }
 
 unsigned long poset_new() {
@@ -301,7 +300,7 @@ int main() {
     p1 = poset_new();
     assert(poset_size(p1) == 0);
     assert(poset_size(p1 + 1) == 0);
-    assert(!poset_insert(p1, NULL));
+    assert(!poset_insert(p1, nullptr));
     assert(poset_insert(p1, "A"));
     assert(poset_test(p1, "A", "A"));
     assert(!poset_insert(p1, "A"));
@@ -314,15 +313,15 @@ int main() {
     assert(poset_insert(p1, "C"));
     assert(poset_add(p1, "B", "C"));
     assert(!poset_remove(p1, "A"));
-    assert(!poset_add(p1, NULL, "X"));
-    assert(!poset_del(p1, NULL, "X"));
-    assert(!poset_test(p1, NULL, "X"));
-    assert(!poset_add(p1, "X", NULL));
-    assert(!poset_del(p1, "X", NULL));
-    assert(!poset_test(p1, "X", NULL));
-    assert(!poset_add(p1, NULL, NULL));
-    assert(!poset_del(p1, NULL, NULL));
-    assert(!poset_test(p1, NULL, NULL));
+    assert(!poset_add(p1, nullptr, "X"));
+    assert(!poset_del(p1, nullptr, "X"));
+    assert(!poset_test(p1, nullptr, "X"));
+    assert(!poset_add(p1, "X", nullptr));
+    assert(!poset_del(p1, "X", nullptr));
+    assert(!poset_test(p1, "X", nullptr));
+    assert(!poset_add(p1, nullptr, nullptr));
+    assert(!poset_del(p1, nullptr, nullptr));
+    assert(!poset_test(p1, nullptr, nullptr));
     assert(!poset_add(p1, "C", "D"));
     assert(!poset_add(p1, "D", "C"));
     assert(!poset_del(p1, "C", "D"));
@@ -359,7 +358,7 @@ int main() {
     p1 = poset_new();
     assert(poset_size(p1) == 0);
     assert(poset_size(p1 + 1) == 0);
-    assert(!poset_insert(p1, NULL));
+    assert(!poset_insert(p1, nullptr));
 
     // 1
     assert(poset_insert(p1, "A"));
