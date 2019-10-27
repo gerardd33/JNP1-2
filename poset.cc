@@ -227,7 +227,6 @@ bool poset_remove(unsigned long id, char const *value) {
         unsigned long value_id = posets[id].second.first[value];
 
         posets[id].second.first.erase(value);
-        posets[id].second.second[value_id].clear();
         posets[id].first[value_id].clear();
 
         std::vector<unsigned long> from = find_nodes_with_edge_to(id, value_id);
@@ -236,6 +235,7 @@ bool poset_remove(unsigned long id, char const *value) {
         delete_edges_from_to(id, from, value_id);
         poset_add_edges(id, from, *to);
 
+        posets[id].second.second[value_id].clear();
         return true;
     }
 
