@@ -106,10 +106,7 @@ bool bfs_search(unsigned long id, unsigned long start_id, unsigned long destinat
             return true;
         }
 
-        std::string* value = &posets[id].first[curr_id];
-        unsigned long value_id = posets[id].second.first[*value];
-        std::vector<unsigned long>* neighbours = &posets[id].second.second[value_id];
-
+        std::vector<unsigned long>* neighbours = &posets[id].second.second[curr_id];
         for (unsigned long neighbour : *neighbours) {
             if (!visited[neighbour]) {
                 visited[neighbour] = true;
