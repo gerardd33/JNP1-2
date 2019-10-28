@@ -10,7 +10,7 @@
 #define fsuffix ")\n"<<__func__<<": "
 
 // to uncomment
-#define NDEBUG
+//#define NDEBUG
 
 //TODO: Change this vector to a map or set
 // A list of values present in the poset
@@ -224,8 +224,8 @@ unsigned long poset_new() {
   dbg::write << fprefix << fsuffix;
 
   Poset poset;
-  (*(posets())).push_back(poset);
-  assert((*(posets())).size());
+  posets()->push_back(poset);
+  assert(posets()->size());
   poset::set_deleted(next_poset_id, false);
 
   dbg::write << "poset " << next_poset_id << " created";
@@ -566,7 +566,6 @@ int main() {
 
   p1 = poset_new();
   poset_delete(p1);
-
 
   p1 = poset_new();
   assert(poset_size(p1) == 0);
