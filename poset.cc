@@ -3,9 +3,16 @@
 #include <vector>
 #include <queue>
 #include <cassert>
+#include <cstdarg>
+#include <string>
+#include <sstream>
 #include "poset.h"
+// TOASK: czy te definy debugowe powinny byc tutaj czy np gdzies indziej?
+#define fprefix __func__<<"("
+#define fsuffix ")\n"<<__func__<<": "
 
 #define NDEBUG
+
 
 using Values_list = std::vector<std::string>;
 // A list of values present in the poset.
@@ -21,8 +28,39 @@ namespace {
   unsigned long next_poset_id = 0;
   std::vector<Poset> posets;
 
-  // TOASK: don't know how to neatly group these getters and setters with the restriction on using classes \
-  // Is it better this way or to just leave them as normal functions like those below (and call them \
+  namespace dbg {
+    std::stringstream write;
+
+    void print() {
+        #ifdef NDEBUG
+        std::cerr<<write.str()<<std::endl;
+        write.str("");
+        #endif
+    }
+
+    void poset_does_not_exist(unsigned long id) {
+        write<<"poset "<<id<<" does not exist";
+    }
+
+    void element_does_not_exist(char const* value) {
+        write<<"element \""<<value<<"\" does not exist";
+    }
+
+    void element_already_exists(char const* value) {
+        write<<"element \""<<value<<"\" already exists";
+    }
+
+    void invalid_value(const std::string name) {
+        write<<"invalid "<<name<<" (NULL)";
+    }
+
+    void relation(char const* value1, char const* value2) {
+        write<<"relation (\""<<value1<<"\", \""<<value2<<"\")";
+    }
+  }
+
+  // TOASK: don't know how to neatly group these getters and setters with the restriction on using classes
+  // Is it better this way or to just leave them as normal functions like those below (and call them
   // set_poset_deleted (for set_deleted), poset::get_values_list etc?
   // Getters and setters for posets
   namespace poset {
@@ -172,33 +210,70 @@ namespace {
 
 unsigned long poset_new() {
 
+    dbg::write<<fprefix<<fsuffix;
     Poset poset;
     posets.push_back(poset);
     poset::set_deleted(next_poset_id, false);
+
+    dbg::write<<"poset "<<next_poset_id<<" created";
+    dbg::print();
     return next_poset_id++;
 }
 
 void poset_delete(unsigned long id) {
 
-    if (id >= next_poset_id || poset::is_deleted(id))
+    dbg::write<<fprefix<<id<<fsuffix;
+    if (id >= next_poset_id || poset::is_deleted(id)) {
+        dbg::poset_does_not_exist(id);
+        dbg::print();
         return;
+    }
 
-    poset_clear(id);
+    poset::get_values_list(id)->clear(); // TOASK: dk if we have to additionally delete these strings by hand
+    poset::get_values_ids(id)->clear();
+    poset::get_adjacency_list(id)->clear();
     poset::set_deleted(id, true);
+
+    dbg::write<<"poset "<<id<<" deleted";
+    dbg::print();
 }
 
 size_t poset_size(unsigned long id) {
 
-    if (!poset_exists(id))
+    dbg::write<<fprefix<<id<<fsuffix;
+    if (!poset_exists(id)) {
+        dbg::poset_does_not_exist(id);
+        dbg::print();
         return 0;
+    }
 
-    return poset::get_values_ids(id)->size();
+    size_t result = poset::get_values_ids(id)->size();
+    dbg::write<<"poset "<<id<<" contains "<<result<<" element(s)";
+    dbg::print();
+    return result;
 }
 
 bool poset_insert(unsigned long id, char const* value) {
 
-    if (!poset_exists(id) || !is_valid_value(value) || is_value_in_poset(id, value))
+    dbg::write<<fprefix<<id<<", \""<<(value? value : "NULL")<<"\""<<fsuffix;
+    if (!poset_exists(id)) {
+        dbg::poset_does_not_exist(id);
+        dbg::print();
         return false;
+    }
+
+    if (!is_valid_value(value)) {
+        dbg::invalid_value("value");
+        dbg::print();
+        return false;
+    }
+
+    dbg::write<<"poset "<<id<<", ";
+    if (is_value_in_poset(id, value)) {
+        dbg::element_already_exists(value);
+        dbg::print();
+        return false;
+    }
 
     std::string new_value(value);
     unsigned long new_value_id = poset::get_adjacency_list(id)->size();
@@ -208,17 +283,32 @@ bool poset_insert(unsigned long id, char const* value) {
     poset::get_values_ids(id)->insert(std::make_pair(new_value, new_value_id));
     poset::get_adjacency_list(id)->push_back(empty_vec);
 
-#ifndef NDEBUG
-    std::cerr << new_value << " " << new_id << "\n";
-#endif
-
+    dbg::write<<"element \""<<value<<"\" inserted";
+    dbg::print();
     return true;
 }
 
 bool poset_remove(unsigned long id, char const* value) {
 
-    if (!poset_exists(id) || !is_valid_value(value) || !is_value_in_poset(id, value))
+    dbg::write<<fprefix<<id<<", \""<<(value? value : "NULL")<<"\""<<fsuffix;
+    if (!poset_exists(id)) {
+        dbg::poset_does_not_exist(id);
+        dbg::print();
         return false;
+    }
+
+    if (!is_valid_value(value)) {
+        dbg::invalid_value("value");
+        dbg::print();
+        return false;
+    }
+
+    dbg::write<<"poset "<<id<<", ";
+    if (!is_value_in_poset(id, value)) {
+        dbg::element_does_not_exist(value);
+        dbg::print();
+        return false;
+    }
 
     //TODO: improve this algorithm
 
@@ -241,34 +331,122 @@ bool poset_remove(unsigned long id, char const* value) {
     add_all_edges_between(id, edges_from_value, *edges_to_value);
 
     adjacency_list->at(value_id).clear();
+    dbg::write<<"element \""<<value<<"\" removed";
+    dbg::print();
     return true;
 }
 
 bool poset_add(unsigned long id, char const* value1, char const* value2) {
 
-    if (!poset_exists(id) || !is_valid_value(value1) || !is_valid_value(value2)
-        || !is_value_in_poset(id, value1) || !is_value_in_poset(id, value2))
+    dbg::write<<fprefix<<id<<", \""<<(value1? value1 : "NULL")<<"\""
+                <<", \""<<(value2? value2 : "NULL")<<"\""<<fsuffix;
+    if (!poset_exists(id)) {
+        dbg::poset_does_not_exist(id);
+        dbg::print();
+        return false;
+    }
+
+    if (!is_valid_value(value1)) {
+        dbg::invalid_value("value1");
+        dbg::print();
+    }
+
+    if (!is_valid_value(value2)) {
+        if (!is_valid_value(value1))
+            dbg::write<<__func__<<": ";
+        dbg::invalid_value("value2");
+        dbg::print();
+    }
+
+    if (!is_valid_value(value1) || !is_valid_value(value2))
         return false;
 
-    if (find_path(id, value1, value2) || find_path(id, value2, value1))
+    dbg::write<<"poset "<<id<<", ";
+    if (!is_value_in_poset(id, value1)) {
+        dbg::write<<"element \""<<value1<<"\" or \""<<value2<<"\" does not exist";
+        dbg::print();
         return false;
+    }
+
+    if (!is_value_in_poset(id, value2)) {
+        dbg::write<<"element \""<<value1<<"\" or \""<<value2<<"\" does not exist";
+        dbg::print();
+        return false;
+    }
+
+    dbg::relation(value1, value2);
+    if (find_path(id, value1, value2)) {
+        dbg::write<<" exists";
+        dbg::print();
+        return false;
+    }
+
+    if (find_path(id, value2, value1)) {
+        dbg::write<<" cannot be added";
+        dbg::print();
+        return false;
+    }
 
     Values_ids* values_ids = poset::get_values_ids(id);
     unsigned long value1_id = values_ids->at(value1);
     unsigned long value2_id = values_ids->at(value2);
     poset::get_adjacency_list(id)->at(value1_id).push_back(value2_id);
 
+    dbg::write<<" added";
+    dbg::print();
     return true;
 }
 
 bool poset_del(unsigned long id, char const* value1, char const* value2) {
 
-    if (!poset_exists(id) || !is_valid_value(value1) || !is_valid_value(value2) ||
-        !is_value_in_poset(id, value1) || !is_value_in_poset(id, value2))
+    dbg::write<<fprefix<<id<<", \""<<(value1? value1 : "NULL")<<"\""
+              <<", \""<<(value2? value2 : "NULL")<<"\""<<fsuffix;
+    if (!poset_exists(id)) {
+        dbg::poset_does_not_exist(id);
+        dbg::print();
+        return false;
+    }
+
+    if (!is_valid_value(value1)) {
+        dbg::invalid_value("value1");
+        dbg::print();
+    }
+
+    if (!is_valid_value(value2)) {
+        if (!is_valid_value(value1))
+            dbg::write<<__func__<<": ";
+        dbg::invalid_value("value2");
+        dbg::print();
+    }
+
+    if (!is_valid_value(value1) || !is_valid_value(value2))
         return false;
 
-    if (!find_path(id, value1, value2) || !can_delete_relation(id, value1, value2))
+    dbg::write<<"poset "<<id<<", ";
+    if (!is_value_in_poset(id, value1)) {
+        dbg::write<<"element \""<<value1<<"\" or \""<<value2<<"\" does not exist";
+        dbg::print();
         return false;
+    }
+
+    if (!is_value_in_poset(id, value2)) {
+        dbg::write<<"element \""<<value1<<"\" or \""<<value2<<"\" does not exist";
+        dbg::print();
+        return false;
+    }
+
+    dbg::relation(value1, value2);
+    if (!find_path(id, value1, value2)) {
+        dbg::write<<" does not exist";
+        dbg::print();
+        return false;
+    }
+
+    if (!can_delete_relation(id, value1, value2)) {
+        dbg::write<<" cannot be deleted";
+        dbg::print();
+        return false;
+    }
 
     Values_ids* values_ids = poset::get_values_ids(id);
     unsigned long value1_id = values_ids->at(value1);
@@ -284,24 +462,70 @@ bool poset_del(unsigned long id, char const* value1, char const* value2) {
     add_all_edges_between(id, from_list1, to_list1);
     add_all_edges_between(id, from_list2, *to_list2);
 
+    dbg::write<<" deleted";
+    dbg::print();
     return true;
 }
 
 bool poset_test(unsigned long id, char const* value1, char const* value2) {
 
-    if (!poset_exists(id) || !is_valid_value(value1) || !is_valid_value(value2) || !is_value_in_poset(id, value1) || !is_value_in_poset(id, value2))
+    dbg::write<<fprefix<<id<<", \""<<(value1? value1 : "NULL")<<"\""
+              <<", \""<<(value2? value2 : "NULL")<<"\""<<fsuffix;
+    if (!poset_exists(id)) {
+        dbg::poset_does_not_exist(id);
+        dbg::print();
         return false;
-    return find_path(id, value1, value2);
+    }
+
+    if (!is_valid_value(value1)) {
+        dbg::invalid_value("value1");
+        dbg::print();
+    }
+
+    if (!is_valid_value(value2)) {
+        if (!is_valid_value(value1))
+            dbg::write<<__func__<<": ";
+        dbg::invalid_value("value2");
+        dbg::print();
+    }
+
+    if (!is_valid_value(value1) || !is_valid_value(value2))
+        return false;
+
+    dbg::write<<"poset "<<id<<", ";
+    if (!is_value_in_poset(id, value1) || !is_value_in_poset(id, value2)) {
+        dbg::write<<"element \""<<value1<<"\" or \""<<value2<<"\" does not exist";
+        dbg::print();
+        return false;
+    }
+
+    dbg::relation(value1, value2);
+    if (find_path(id, value1, value2)) {
+        dbg::write<<" exists";
+        dbg::print();
+        return true;
+    }
+    else {
+        dbg::write<<" does not exist";
+        dbg::print();
+        return false;
+    }
 }
 
 void poset_clear(unsigned long id) {
 
-    if (!poset_exists(id))
+    dbg::write<<fprefix<<id<<fsuffix;
+    if (!poset_exists(id)) {
+        dbg::poset_does_not_exist(id);
+        dbg::print();
         return;
+    }
 
     poset::get_values_list(id)->clear(); // TOASK: dk if we have to additionally delete these strings by hand
     poset::get_values_ids(id)->clear();
     poset::get_adjacency_list(id)->clear();
+    dbg::write<<"poset "<<id<<" cleared";
+    dbg::print();
 }
 
 
@@ -311,7 +535,7 @@ int main() {
     p1 = poset_new();
     assert(poset_size(p1) == 0);
     assert(poset_size(p1 + 1) == 0);
-    assert(!poset_insert(p1, nullptr));
+    assert(!poset_insert(p1, NULL));
     assert(poset_insert(p1, "A"));
     assert(poset_test(p1, "A", "A"));
     assert(!poset_insert(p1, "A"));
@@ -324,15 +548,15 @@ int main() {
     assert(poset_insert(p1, "C"));
     assert(poset_add(p1, "B", "C"));
     assert(!poset_remove(p1, "A"));
-    assert(!poset_add(p1, nullptr, "X"));
-    assert(!poset_del(p1, nullptr, "X"));
-    assert(!poset_test(p1, nullptr, "X"));
-    assert(!poset_add(p1, "X", nullptr));
-    assert(!poset_del(p1, "X", nullptr));
-    assert(!poset_test(p1, "X", nullptr));
-    assert(!poset_add(p1, nullptr, nullptr));
-    assert(!poset_del(p1, nullptr, nullptr));
-    assert(!poset_test(p1, nullptr, nullptr));
+    assert(!poset_add(p1, NULL, "X"));
+    assert(!poset_del(p1, NULL, "X"));
+    assert(!poset_test(p1, NULL, "X"));
+    assert(!poset_add(p1, "X", NULL));
+    assert(!poset_del(p1, "X", NULL));
+    assert(!poset_test(p1, "X", NULL));
+    assert(!poset_add(p1, NULL, NULL));
+    assert(!poset_del(p1, NULL, NULL));
+    assert(!poset_test(p1, NULL, NULL));
     assert(!poset_add(p1, "C", "D"));
     assert(!poset_add(p1, "D", "C"));
     assert(!poset_del(p1, "C", "D"));
@@ -364,6 +588,9 @@ int main() {
     poset_delete(p1);
     poset_delete(p1 + 1);
 
+
+
+    /*
     // harder cases
 
     p1 = poset_new();
@@ -457,6 +684,6 @@ int main() {
     assert(poset_test(p1, "A", "B"));
     assert(poset_test(p1, "C", "B"));
     assert(!poset_del(p1, "A", "B"));
-
+     */
     return 0;
 }
