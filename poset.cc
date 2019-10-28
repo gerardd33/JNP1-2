@@ -49,11 +49,11 @@ namespace {
       return id < next_poset_id && !is_poset_deleted(id);
   }
 
-  bool is_valid_value(char const *value) {
+  bool is_valid_value(char const* value) {
       return value != nullptr; // value can't be null, and that's it (?)
   }
 
-  bool is_value_in_poset(unsigned long id, char const *value) {
+  bool is_value_in_poset(unsigned long id, char const* value) {
 
       assert(poset_exists(id));
 
@@ -61,10 +61,10 @@ namespace {
       return values_ids->find(value) != values_ids->end();
   }
 
-  void add_edge(unsigned long id, unsigned long value1_id, unsigned long value2_id) {
+  void add_edge(unsigned long id, unsigned long from_value_id, unsigned long to_value_id) {
 
       Adjacency_list* adjacency_list = get_poset_adjacency_list(id);
-      adjacency_list->at(value1_id).push_back(value2_id);
+      adjacency_list->at(from_value_id).push_back(to_value_id);
   }
 
   // Adds all the possible edges between elements from from_list and to_list.
@@ -126,7 +126,7 @@ namespace {
       return false;
   }
 
-  bool find_path(unsigned long id, char const *value1, char const *value2) {
+  bool find_path(unsigned long id, char const* value1, char const* value2) {
 
       Values_ids* values_ids = get_poset_values_ids(id);
       unsigned long start_value_id = values_ids->at(value1);
@@ -153,7 +153,7 @@ namespace {
       return result;
   }
 
-  bool can_delete_relation(unsigned long id, char const *value1, char const *value2) {
+  bool can_delete_relation(unsigned long id, char const* value1, char const* value2) {
 
       Values_ids* values_ids = get_poset_values_ids(id);
       unsigned long value1_id = values_ids->at(value1);
@@ -193,7 +193,7 @@ size_t poset_size(unsigned long id) {
     return get_poset_values_ids(id)->size();
 }
 
-bool poset_insert(unsigned long id, char const *value) {
+bool poset_insert(unsigned long id, char const* value) {
 
     if (!poset_exists(id) || !is_valid_value(value) || is_value_in_poset(id, value))
         return false;
@@ -213,7 +213,7 @@ bool poset_insert(unsigned long id, char const *value) {
     return true;
 }
 
-bool poset_remove(unsigned long id, char const *value) {
+bool poset_remove(unsigned long id, char const* value) {
 
     if (!poset_exists(id) || !is_valid_value(value) || !is_value_in_poset(id, value))
         return false;
@@ -242,7 +242,7 @@ bool poset_remove(unsigned long id, char const *value) {
     return true;
 }
 
-bool poset_add(unsigned long id, char const *value1, char const *value2) {
+bool poset_add(unsigned long id, char const* value1, char const* value2) {
 
     if (!poset_exists(id) || !is_valid_value(value1) || !is_valid_value(value2)
         || !is_value_in_poset(id, value1) || !is_value_in_poset(id, value2))
@@ -259,7 +259,7 @@ bool poset_add(unsigned long id, char const *value1, char const *value2) {
     return true;
 }
 
-bool poset_del(unsigned long id, char const *value1, char const *value2) {
+bool poset_del(unsigned long id, char const* value1, char const* value2) {
 
     if (!poset_exists(id) || !is_valid_value(value1) || !is_valid_value(value2) ||
         !is_value_in_poset(id, value1) || !is_value_in_poset(id, value2))
@@ -285,7 +285,7 @@ bool poset_del(unsigned long id, char const *value1, char const *value2) {
     return true;
 }
 
-bool poset_test(unsigned long id, char const *value1, char const *value2) {
+bool poset_test(unsigned long id, char const* value1, char const* value2) {
 
     if (!poset_exists(id) || !is_valid_value(value1) || !is_valid_value(value2) || !is_value_in_poset(id, value1) || !is_value_in_poset(id, value2))
         return false;
