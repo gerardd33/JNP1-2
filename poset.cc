@@ -177,8 +177,8 @@ namespace {
 unsigned long poset_new() {
 
     Poset poset;
-    set_poset_deleted(next_poset_id, false);
     posets.push_back(poset);
+    set_poset_deleted(next_poset_id, false);
     return next_poset_id++;
 }
 
