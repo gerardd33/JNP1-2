@@ -49,7 +49,11 @@ namespace {
       return id < next_poset_id && !is_poset_deleted(id);
   }
 
-  bool value_in_poset(unsigned long id, char const *value) {
+  bool is_valid_value(char const *value) {
+      return value != nullptr; // value can't be null, and that's it (?)
+  }
+
+  bool is_value_in_poset(unsigned long id, char const *value) {
 
       assert(poset_exists(id));
 
@@ -57,27 +61,61 @@ namespace {
       return values_ids->find(value) != values_ids->end();
   }
 
-  bool is_valid_value(char const *value) {
-      return value != nullptr; // value can't be null, and that's it (?)
+  void add_edge(unsigned long id, unsigned long value1_id, unsigned long value2_id) {
+
+      Adjacency_list* adjacency_list = get_poset_adjacency_list(id);
+      adjacency_list->at(value1_id).push_back(value2_id);
   }
 
-  bool bfs_search(unsigned long id, unsigned long start_id, unsigned long destination_id) {
+  // Adds all the possible edges between elements from from_list and to_list.
+  void add_all_edges_between(unsigned long id, const std::vector<unsigned long>& from_list, const std::vector<unsigned long>& to_list) {
+
+      for (unsigned long from_value_id : from_list) {
+          for (unsigned long to_value_id : to_list) {
+              add_edge(id, from_value_id, to_value_id);
+          }
+      }
+  }
+
+  // Removes an edge from from_value_id to to_value_id.
+  void delete_edge(unsigned long id, unsigned long from_value_id, unsigned long to_value_id) {
+
+      std::vector<unsigned long>* neighbours = &get_poset_adjacency_list(id)->at(from_value_id);
+
+      //TODO: do it better, this might not work properly
+      for (size_t i = 0; i < neighbours->size(); i++) {
+          if (neighbours->at(i) == to_value_id) {
+              std::swap(neighbours->at(i), neighbours->back());
+              neighbours->pop_back();
+              i--;
+          }
+      }
+  }
+
+  // Removes all edges from nodes in vector from_list to the node to_value_id.
+  void delete_all_edges_from(unsigned long id, const std::vector<unsigned long>& from_list, unsigned long to_value_id) {
+
+      for (unsigned long curr_value_id : from_list) {
+          delete_edge(id, curr_value_id, to_value_id);
+      }
+  }
+
+  bool bfs(unsigned long id, unsigned long start_value_id, unsigned long destination_value_id) {
 
       Adjacency_list* adjacency_list = get_poset_adjacency_list(id);
       std::queue<unsigned long> queue;
       std::vector<bool> visited(adjacency_list->size(), false);
-
-      queue.push(start_id);
+      queue.push(start_value_id);
 
       while (!queue.empty()) {
-          unsigned long curr_id = queue.front();
+
+          unsigned long curr_value_id = queue.front();
           queue.pop();
 
-          if (curr_id == destination_id)
+          if (curr_value_id == destination_value_id)
               return true;
 
-          std::vector<unsigned long>* neighbours = &adjacency_list->at(curr_id);
-          for (unsigned long neighbour : *neighbours) {
+          for (unsigned long neighbour : adjacency_list->at(curr_value_id)) {
               if (!visited[neighbour]) {
                   visited[neighbour] = true;
                   queue.push(neighbour);
@@ -91,24 +129,20 @@ namespace {
   bool find_path(unsigned long id, char const *value1, char const *value2) {
 
       Values_ids* values_ids = get_poset_values_ids(id);
+      unsigned long start_value_id = values_ids->at(value1);
+      unsigned long destination_value_id = values_ids->at(value2);
 
-      unsigned long start_id = values_ids->at(value1);
-      unsigned long destination_id = values_ids->at(value2);
-
-      return bfs_search(id, start_id, destination_id);
+      return bfs(id, start_value_id, destination_value_id);
   }
 
-  std::vector<unsigned long> find_nodes_with_edge_to(unsigned long id, unsigned long value_id) {
+  // Returns a vector of all nodes from which there exists an edge to the node corresponding to the given value.
+  std::vector<unsigned long> find_all_with_edge_to(unsigned long id, unsigned long value_id) {
 
       Adjacency_list* adjacency_list = get_poset_adjacency_list(id);
       std::vector<unsigned long> result;
 
-      for (size_t i = 0; i < adjacency_list->size(); i++) {
-
-          unsigned long curr_value_id = i;
-          std::vector<unsigned long>* neighbours = &adjacency_list->at(i);
-
-          for (unsigned long neighbour_value_id : (*neighbours)) {
+      for (size_t curr_value_id = 0; curr_value_id < adjacency_list->size(); curr_value_id++) {
+          for (unsigned long neighbour_value_id : adjacency_list->at(curr_value_id)) {
               if (neighbour_value_id == value_id) {
                   result.push_back(curr_value_id);
                   break;
@@ -119,55 +153,15 @@ namespace {
       return result;
   }
 
-  void delete_edge_to_neighbour(unsigned long id, unsigned long value1_id, unsigned long value2_id) {
-
-      std::vector<unsigned long>* neighbours = &get_poset_adjacency_list(id)->at(value1_id);
-
-      //TODO: do it better, this might not work properly
-      for (size_t i = 0; i < neighbours->size(); i++) {
-          unsigned long neighbour_value_id = neighbours->at(i);
-
-          if (neighbour_value_id == value2_id) {
-              std::swap(neighbours->at(i), neighbours->back());
-              neighbours->pop_back();
-              i--;
-          }
-      }
-  }
-
-  void delete_edges_from_to(unsigned long id, const std::vector<unsigned long>& from, unsigned long value_id) {
-
-      for (unsigned long curr_value_id : from) {
-          delete_edge_to_neighbour(id, curr_value_id, value_id);
-      }
-  }
-
-  void poset_add_edge_between(unsigned long id, unsigned long value1_id, unsigned long value2_id) {
-
-      Adjacency_list* adjacency_list = get_poset_adjacency_list(id);
-      adjacency_list->at(value1_id).push_back(value2_id);
-  }
-
-  void poset_add_edges(unsigned long id, const std::vector<unsigned long>& from, const std::vector<unsigned long>& to) {
-
-      for (unsigned long value1_id : from) {
-          for (unsigned long value2_id : to) {
-              poset_add_edge_between(id, value1_id, value2_id);
-          }
-      }
-  }
-
   bool can_delete_relation(unsigned long id, char const *value1, char const *value2) {
 
       Values_ids* values_ids = get_poset_values_ids(id);
       unsigned long value1_id = values_ids->at(value1);
       unsigned long value2_id = values_ids->at(value2);
 
-      delete_edge_to_neighbour(id, value1_id, value2_id);
-
+      delete_edge(id, value1_id, value2_id);
       bool result = !find_path(id, value1, value2);
-
-      poset_add_edge_between(id, value1_id, value2_id);
+      add_edge(id, value1_id, value2_id);
 
       return result;
   }
@@ -201,7 +195,7 @@ size_t poset_size(unsigned long id) {
 
 bool poset_insert(unsigned long id, char const *value) {
 
-    if (!poset_exists(id) || !is_valid_value(value) || value_in_poset(id, value))
+    if (!poset_exists(id) || !is_valid_value(value) || is_value_in_poset(id, value))
         return false;
 
     std::string new_value(value);
@@ -221,7 +215,7 @@ bool poset_insert(unsigned long id, char const *value) {
 
 bool poset_remove(unsigned long id, char const *value) {
 
-    if (!poset_exists(id) || !is_valid_value(value) || !value_in_poset(id, value))
+    if (!poset_exists(id) || !is_valid_value(value) || !is_value_in_poset(id, value))
         return false;
 
     //TODO: improve this algorithm
@@ -238,11 +232,11 @@ bool poset_remove(unsigned long id, char const *value) {
     get_poset_values_ids(id)->erase(value);
     get_poset_values_list(id)->at(value_id).clear();
 
-    std::vector<unsigned long> from = find_nodes_with_edge_to(id, value_id);
-    std::vector<unsigned long>* to = &adjacency_list->at(value_id);
+    std::vector<unsigned long> edges_from_value = find_all_with_edge_to(id, value_id);
+    std::vector<unsigned long>* edges_to_value = &adjacency_list->at(value_id);
 
-    delete_edges_from_to(id, from, value_id);
-    poset_add_edges(id, from, *to);
+    delete_all_edges_from(id, edges_from_value, value_id);
+    add_all_edges_between(id, edges_from_value, *edges_to_value);
 
     adjacency_list->at(value_id).clear();
     return true;
@@ -251,18 +245,16 @@ bool poset_remove(unsigned long id, char const *value) {
 bool poset_add(unsigned long id, char const *value1, char const *value2) {
 
     if (!poset_exists(id) || !is_valid_value(value1) || !is_valid_value(value2)
-        || !value_in_poset(id, value1) || !value_in_poset(id, value2))
+        || !is_value_in_poset(id, value1) || !is_value_in_poset(id, value2))
         return false;
 
     if (find_path(id, value1, value2) || find_path(id, value2, value1))
         return false;
 
-    Adjacency_list* adjacency_list = get_poset_adjacency_list(id);
     Values_ids* values_ids = get_poset_values_ids(id);
-
     unsigned long value1_id = values_ids->at(value1);
     unsigned long value2_id = values_ids->at(value2);
-    adjacency_list->at(value1_id).push_back(value2_id);
+    get_poset_adjacency_list(id)->at(value1_id).push_back(value2_id);
 
     return true;
 }
@@ -270,7 +262,7 @@ bool poset_add(unsigned long id, char const *value1, char const *value2) {
 bool poset_del(unsigned long id, char const *value1, char const *value2) {
 
     if (!poset_exists(id) || !is_valid_value(value1) || !is_valid_value(value2) ||
-        !value_in_poset(id, value1) || !value_in_poset(id, value2))
+        !is_value_in_poset(id, value1) || !is_value_in_poset(id, value2))
         return false;
 
     if (!find_path(id, value1, value2) || !can_delete_relation(id, value1, value2))
@@ -279,23 +271,23 @@ bool poset_del(unsigned long id, char const *value1, char const *value2) {
     Values_ids* values_ids = get_poset_values_ids(id);
     unsigned long value1_id = values_ids->at(value1);
     unsigned long value2_id = values_ids->at(value2);
-    delete_edge_to_neighbour(id, value1_id, value2_id);
+    delete_edge(id, value1_id, value2_id);
 
-    std::vector<unsigned long> from1 = find_nodes_with_edge_to(id, value1_id);
-    std::vector<unsigned long> to1 = {value2_id};
+    std::vector<unsigned long> from_list1 = find_all_with_edge_to(id, value1_id);
+    std::vector<unsigned long> to_list1 = {value2_id};
 
-    std::vector<unsigned long> from2 = {value1_id};
-    std::vector<unsigned long>* to2 = &get_poset_adjacency_list(id)->at(value2_id);
+    std::vector<unsigned long> from_list2 = {value1_id};
+    std::vector<unsigned long>* to_list2 = &get_poset_adjacency_list(id)->at(value2_id);
 
-    poset_add_edges(id, from1, to1);
-    poset_add_edges(id, from2, *to2);
+    add_all_edges_between(id, from_list1, to_list1);
+    add_all_edges_between(id, from_list2, *to_list2);
 
     return true;
 }
 
 bool poset_test(unsigned long id, char const *value1, char const *value2) {
 
-    if (!poset_exists(id) || !is_valid_value(value1) || !is_valid_value(value2) || !value_in_poset(id, value1) || !value_in_poset(id, value2))
+    if (!poset_exists(id) || !is_valid_value(value1) || !is_valid_value(value2) || !is_value_in_poset(id, value1) || !is_value_in_poset(id, value2))
         return false;
     return find_path(id, value1, value2);
 }
@@ -305,7 +297,7 @@ void poset_clear(unsigned long id) {
     if (!poset_exists(id))
         return;
 
-    get_poset_values_list(id)->clear(); // dk if we have to additionally delete these strings by hand
+    get_poset_values_list(id)->clear(); // TOASK: dk if we have to additionally delete these strings by hand
     get_poset_values_ids(id)->clear();
     get_poset_adjacency_list(id)->clear();
 }
