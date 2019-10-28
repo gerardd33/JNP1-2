@@ -10,28 +10,40 @@
 using Values_list = std::vector<std::string>;
 using Values_ids = std::unordered_map<std::string, unsigned long>;
 using Adjacency_list = std::vector<std::vector<unsigned long>>;
-using Poset = std::tuple<Values_list, Values_ids, Adjacency_list>;
+using Poset = std::tuple<bool, Values_list, Values_ids, Adjacency_list>;
+// The bool indicates whether the poset is deleted.
 
 namespace {
-  // not sure where these should be
+  // TOASK: not sure where these should be
   unsigned long next_poset_id = 0;
   std::vector<Poset> posets;
-  std::vector<bool> deleted_posets;
 
-  Values_list* get_poset_values_list(unsigned long poset_id) {
-      return &std::get<0>(posets[poset_id]);
-  }
+  // TOASK: don't know how to neatly group these getters and setters with the restriction on using classes
+  // Getters and setters for posets
+  namespace {
+    void set_poset_deleted(unsigned long poset_id, bool value) {
+        std::get<0>(posets[poset_id]) = value;
+    }
 
-  Values_ids* get_poset_values_ids(unsigned long poset_id) {
-      return &std::get<1>(posets[poset_id]);
-  }
+    bool is_poset_deleted(unsigned long poset_id) {
+        return std::get<0>(posets[poset_id]);
+    }
 
-  Adjacency_list* get_poset_adjacency_list(unsigned long poset_id) {
-      return &std::get<2>(posets[poset_id]);
+    Values_list* get_poset_values_list(unsigned long poset_id) {
+        return &std::get<1>(posets[poset_id]);
+    }
+
+    Values_ids* get_poset_values_ids(unsigned long poset_id) {
+        return &std::get<2>(posets[poset_id]);
+    }
+
+    Adjacency_list* get_poset_adjacency_list(unsigned long poset_id) {
+        return &std::get<3>(posets[poset_id]);
+    }
   }
 
   bool poset_exists(unsigned long id) {
-      return id < next_poset_id && !deleted_posets[id];
+      return id < next_poset_id && !is_poset_deleted(id);
   }
 
   bool value_in_poset(unsigned long id, char const *value) {
@@ -170,19 +182,18 @@ namespace {
 unsigned long poset_new() {
 
     Poset poset;
+    set_poset_deleted(next_poset_id, false);
     posets.push_back(poset);
-    deleted_posets.push_back(false);
-
     return next_poset_id++;
 }
 
 void poset_delete(unsigned long id) {
 
-    if (id >= next_poset_id || deleted_posets[id])
+    if (id >= next_poset_id || is_poset_deleted(id))
         return;
 
     poset_clear(id);
-    deleted_posets[id] = true;
+    set_poset_deleted(id, true);
 }
 
 size_t poset_size(unsigned long id) {
