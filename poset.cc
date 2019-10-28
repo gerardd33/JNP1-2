@@ -3,26 +3,26 @@
 #include <vector>
 #include <queue>
 #include <cassert>
-#include <string>
 #include <sstream>
 #include "poset.h"
 // TOASK: czy te definy debugowe powinny byc tutaj czy np gdzies indziej?
 #define fprefix __func__<<"("
 #define fsuffix ")\n"<<__func__<<": "
 
-
 // to uncomment
 #define NDEBUG
 
-
+// A list of values present in the poset
 using Values_list = std::vector<std::string>;
-// A list of values present in the poset.
-using Values_ids = std::unordered_map<std::string, unsigned long>;
+
 // A map matching the values to their ids in the poset
-using Adjacency_list = std::vector<std::vector<unsigned long>>;
+using Values_ids = std::unordered_map<std::string, unsigned long>;
+
 // An adjacency list storing the edges in the graph representation of the poset
+using Adjacency_list = std::vector<std::vector<unsigned long>>;
+
+// The bool indicates whether the poset is deleted
 using Poset = std::tuple<bool, Values_list, Values_ids, Adjacency_list>;
-// The bool indicates whether the poset is deleted.
 
 namespace {
   // TOASK: not sure where these should be
@@ -34,7 +34,7 @@ namespace {
 
     void print() {
         #ifdef NDEBUG
-        std::cerr<<write.str()<<std::endl;
+        std::cerr << write.str() << "\n";
         write.str("");
         #endif
     }
@@ -42,23 +42,23 @@ namespace {
     // TODO: better plan these functions, to make the write's in main functions clearer; tidy up a lot
 
     void poset_does_not_exist(unsigned long id) {
-        write<<"poset "<<id<<" does not exist";
+        write << "poset " << id << " does not exist";
     }
 
     void element_does_not_exist(char const* value) {
-        write<<"element \""<<value<<"\" does not exist";
+        write << "element \"" << value << "\" does not exist";
     }
 
     void element_already_exists(char const* value) {
-        write<<"element \""<<value<<"\" already exists";
+        write << "element \"" << value << "\" already exists";
     }
 
-    void invalid_value(const std::string name) {
-        write<<"invalid "<<name<<" (NULL)";
+    void invalid_value(const std::string& name) {
+        write << "invalid " << name << " (NULL)";
     }
 
     void relation(char const* value1, char const* value2) {
-        write<<"relation (\""<<value1<<"\", \""<<value2<<"\")";
+        write << "relation (\"" << value1 << "\", \""<< value2 << "\")";
     }
   }
 
@@ -93,25 +93,26 @@ namespace {
   }
 
   bool is_valid_value(char const* value) {
-      return value != nullptr; // value can't be null, and that's it (?)
+      return value != nullptr;
   }
 
   bool is_value_in_poset(unsigned long id, char const* value) {
-
-      assert(poset_exists(id));
 
       Values_ids* values_ids = poset::get_values_ids(id);
       return values_ids->find(value) != values_ids->end();
   }
 
-  void add_edge(unsigned long id, unsigned long from_value_id, unsigned long to_value_id) {
+  void add_edge(unsigned long id, unsigned long from_value_id,
+                unsigned long to_value_id) {
 
       Adjacency_list* adjacency_list = poset::get_adjacency_list(id);
       adjacency_list->at(from_value_id).push_back(to_value_id);
   }
 
   // Adds all the possible edges between elements from from_list and to_list.
-  void add_all_edges_between(unsigned long id, const std::vector<unsigned long>& from_list, const std::vector<unsigned long>& to_list) {
+  void add_all_edges_between(unsigned long id,
+                             const std::vector<unsigned long>& from_list,
+                             const std::vector<unsigned long>& to_list) {
 
       for (unsigned long from_value_id : from_list) {
           for (unsigned long to_value_id : to_list) {
@@ -121,11 +122,14 @@ namespace {
   }
 
   // Removes an edge from from_value_id to to_value_id.
-  void delete_edge(unsigned long id, unsigned long from_value_id, unsigned long to_value_id) {
+  void delete_edge(unsigned long id, unsigned long from_value_id,
+                   unsigned long to_value_id) {
 
-      std::vector<unsigned long>* neighbours = &poset::get_adjacency_list(id)->at(from_value_id);
+      std::vector<unsigned long>* neighbours =
+              &poset::get_adjacency_list(id)->at(from_value_id);
 
       //TODO: do it better, this might not work properly
+      //maybe it's not so bad
       for (size_t i = 0; i < neighbours->size(); i++) {
           if (neighbours->at(i) == to_value_id) {
               std::swap(neighbours->at(i), neighbours->back());
@@ -136,18 +140,21 @@ namespace {
   }
 
   // Removes all edges from nodes in vector from_list to the node to_value_id.
-  void delete_all_edges_from(unsigned long id, const std::vector<unsigned long>& from_list, unsigned long to_value_id) {
+  void delete_all_edges_from(unsigned long id,
+                             const std::vector<unsigned long>& from_list,
+                             unsigned long to_value_id) {
 
       for (unsigned long curr_value_id : from_list) {
           delete_edge(id, curr_value_id, to_value_id);
       }
   }
 
-  bool bfs(unsigned long id, unsigned long start_value_id, unsigned long destination_value_id) {
+  bool bfs(unsigned long id, unsigned long start_value_id,
+           unsigned long destination_value_id) {
 
       Adjacency_list* adjacency_list = poset::get_adjacency_list(id);
-      std::queue<unsigned long> queue;
       std::vector<bool> visited(adjacency_list->size(), false);
+      std::queue<unsigned long> queue;
       queue.push(start_value_id);
 
       while (!queue.empty()) {
@@ -155,8 +162,9 @@ namespace {
           unsigned long curr_value_id = queue.front();
           queue.pop();
 
-          if (curr_value_id == destination_value_id)
+          if (curr_value_id == destination_value_id) {
               return true;
+          }
 
           for (unsigned long neighbour : adjacency_list->at(curr_value_id)) {
               if (!visited[neighbour]) {
@@ -178,8 +186,10 @@ namespace {
       return bfs(id, start_value_id, destination_value_id);
   }
 
-  // Returns a vector of all nodes from which there exists an edge to the node corresponding to the given value.
-  std::vector<unsigned long> find_all_with_edge_to(unsigned long id, unsigned long value_id) {
+  // Returns a vector of all nodes from which there exists
+  // an edge to the node corresponding to the given value.
+  std::vector<unsigned long> find_all_with_edge_to(unsigned long id,
+                                                   unsigned long value_id) {
 
       Adjacency_list* adjacency_list = poset::get_adjacency_list(id);
       std::vector<unsigned long> result;
@@ -196,7 +206,8 @@ namespace {
       return result;
   }
 
-  bool can_delete_relation(unsigned long id, char const* value1, char const* value2) {
+  bool can_delete_relation(unsigned long id, char const* value1,
+                           char const* value2) {
 
       Values_ids* values_ids = poset::get_values_ids(id);
       unsigned long value1_id = values_ids->at(value1);
@@ -213,19 +224,22 @@ namespace {
 
 unsigned long poset_new() {
 
-    dbg::write<<fprefix<<fsuffix;
+    dbg::write << fprefix << fsuffix;
+
     Poset poset;
     posets.push_back(poset);
     poset::set_deleted(next_poset_id, false);
 
-    dbg::write<<"poset "<<next_poset_id<<" created";
+    dbg::write << "poset " << next_poset_id << " created";
     dbg::print();
+
     return next_poset_id++;
 }
 
 void poset_delete(unsigned long id) {
 
-    dbg::write<<fprefix<<id<<fsuffix;
+    dbg::write << fprefix << id << fsuffix;
+
     if (id >= next_poset_id || poset::is_deleted(id)) {
         dbg::poset_does_not_exist(id);
         dbg::print();
@@ -237,13 +251,14 @@ void poset_delete(unsigned long id) {
     poset::get_adjacency_list(id)->clear();
     poset::set_deleted(id, true);
 
-    dbg::write<<"poset "<<id<<" deleted";
+    dbg::write << "poset " << id << " deleted";
     dbg::print();
 }
 
 size_t poset_size(unsigned long id) {
 
-    dbg::write<<fprefix<<id<<fsuffix;
+    dbg::write << fprefix << id << fsuffix;
+
     if (!poset_exists(id)) {
         dbg::poset_does_not_exist(id);
         dbg::print();
@@ -251,14 +266,18 @@ size_t poset_size(unsigned long id) {
     }
 
     size_t result = poset::get_values_ids(id)->size();
-    dbg::write<<"poset "<<id<<" contains "<<result<<" element(s)";
+
+    dbg::write << "poset " << id << " contains " << result << " element(s)";
     dbg::print();
+
     return result;
 }
 
 bool poset_insert(unsigned long id, char const* value) {
 
-    dbg::write<<fprefix<<id<<", \""<<(value? value : "NULL")<<"\""<<fsuffix;
+    dbg::write << fprefix << id << ", \"" << (value ? value : "NULL") << "\""
+               << fsuffix;
+
     if (!poset_exists(id)) {
         dbg::poset_does_not_exist(id);
         dbg::print();
@@ -271,7 +290,8 @@ bool poset_insert(unsigned long id, char const* value) {
         return false;
     }
 
-    dbg::write<<"poset "<<id<<", ";
+    dbg::write << "poset " << id << ", ";
+
     if (is_value_in_poset(id, value)) {
         dbg::element_already_exists(value);
         dbg::print();
@@ -286,14 +306,17 @@ bool poset_insert(unsigned long id, char const* value) {
     poset::get_values_ids(id)->insert(std::make_pair(new_value, new_value_id));
     poset::get_adjacency_list(id)->push_back(empty_vec);
 
-    dbg::write<<"element \""<<value<<"\" inserted";
+    dbg::write << "element \"" << value << "\" inserted";
     dbg::print();
+
     return true;
 }
 
 bool poset_remove(unsigned long id, char const* value) {
 
-    dbg::write<<fprefix<<id<<", \""<<(value? value : "NULL")<<"\""<<fsuffix;
+    dbg::write << fprefix << id << ", \"" << (value ? value : "NULL") << "\""
+               << fsuffix;
+
     if (!poset_exists(id)) {
         dbg::poset_does_not_exist(id);
         dbg::print();
@@ -306,20 +329,13 @@ bool poset_remove(unsigned long id, char const* value) {
         return false;
     }
 
-    dbg::write<<"poset "<<id<<", ";
+    dbg::write << "poset " << id << ", ";
+
     if (!is_value_in_poset(id, value)) {
         dbg::element_does_not_exist(value);
         dbg::print();
         return false;
     }
-
-    //TODO: improve this algorithm
-
-    // for now this slow algorithm, just to make sure it works
-    // 0. delete removed node from everywhere
-    // 1. find nodes that have an edge to removed node and put them in a vector1
-    // 2. put nodes to which the removed node has an edge in a vector2
-    // 3. create new edges between all nodes in vector1 and vector2
 
     Adjacency_list* adjacency_list = poset::get_adjacency_list(id);
     unsigned long value_id = poset::get_values_ids(id)->at(value);
@@ -327,22 +343,28 @@ bool poset_remove(unsigned long id, char const* value) {
     poset::get_values_ids(id)->erase(value);
     poset::get_values_list(id)->at(value_id).clear();
 
-    std::vector<unsigned long> edges_from_value = find_all_with_edge_to(id, value_id);
-    std::vector<unsigned long>* edges_to_value = &adjacency_list->at(value_id);
+    std::vector<unsigned long> edges_from_value =
+            find_all_with_edge_to(id, value_id);
+
+    std::vector<unsigned long>* edges_to_value =
+            &adjacency_list->at(value_id);
 
     delete_all_edges_from(id, edges_from_value, value_id);
     add_all_edges_between(id, edges_from_value, *edges_to_value);
 
     adjacency_list->at(value_id).clear();
-    dbg::write<<"element \""<<value<<"\" removed";
+
+    dbg::write << "element \"" << value << "\" removed";
     dbg::print();
+
     return true;
 }
 
 bool poset_add(unsigned long id, char const* value1, char const* value2) {
 
-    dbg::write<<fprefix<<id<<", \""<<(value1? value1 : "NULL")<<"\""
-                <<", \""<<(value2? value2 : "NULL")<<"\""<<fsuffix;
+    dbg::write << fprefix << id << ", \"" << (value1 ? value1 : "NULL") << "\""
+               <<", \"" << (value2 ? value2 : "NULL") << "\"" << fsuffix;
+
     if (!poset_exists(id)) {
         dbg::poset_does_not_exist(id);
         dbg::print();
@@ -355,37 +377,42 @@ bool poset_add(unsigned long id, char const* value1, char const* value2) {
     }
 
     if (!is_valid_value(value2)) {
-        if (!is_valid_value(value1))
-            dbg::write<<__func__<<": ";
+        if (!is_valid_value(value1)) {
+            dbg::write << __func__ << ": ";
+        }
         dbg::invalid_value("value2");
         dbg::print();
     }
 
-    if (!is_valid_value(value1) || !is_valid_value(value2))
+    if (!is_valid_value(value1) || !is_valid_value(value2)) {
         return false;
+    }
 
-    dbg::write<<"poset "<<id<<", ";
+    dbg::write << "poset " << id << ", ";
+
     if (!is_value_in_poset(id, value1)) {
-        dbg::write<<"element \""<<value1<<"\" or \""<<value2<<"\" does not exist";
+        dbg::write << "element \"" << value1 << "\" or \"" << value2
+                   << "\" does not exist";
         dbg::print();
         return false;
     }
 
     if (!is_value_in_poset(id, value2)) {
-        dbg::write<<"element \""<<value1<<"\" or \""<<value2<<"\" does not exist";
+        dbg::write << "element \"" << value1 << "\" or \"" << value2
+                   << "\" does not exist";
         dbg::print();
         return false;
     }
 
     dbg::relation(value1, value2);
     if (find_path(id, value1, value2)) {
-        dbg::write<<" exists";
+        dbg::write << " exists";
         dbg::print();
         return false;
     }
 
     if (find_path(id, value2, value1)) {
-        dbg::write<<" cannot be added";
+        dbg::write << " cannot be added";
         dbg::print();
         return false;
     }
@@ -395,15 +422,17 @@ bool poset_add(unsigned long id, char const* value1, char const* value2) {
     unsigned long value2_id = values_ids->at(value2);
     poset::get_adjacency_list(id)->at(value1_id).push_back(value2_id);
 
-    dbg::write<<" added";
+    dbg::write << " added";
     dbg::print();
+
     return true;
 }
 
 bool poset_del(unsigned long id, char const* value1, char const* value2) {
 
-    dbg::write<<fprefix<<id<<", \""<<(value1? value1 : "NULL")<<"\""
-              <<", \""<<(value2? value2 : "NULL")<<"\""<<fsuffix;
+    dbg::write << fprefix << id << ", \"" << (value1 ? value1 : "NULL") << "\""
+               << ", \"" << (value2 ? value2 : "NULL") << "\"" << fsuffix;
+
     if (!poset_exists(id)) {
         dbg::poset_does_not_exist(id);
         dbg::print();
@@ -416,37 +445,41 @@ bool poset_del(unsigned long id, char const* value1, char const* value2) {
     }
 
     if (!is_valid_value(value2)) {
-        if (!is_valid_value(value1))
-            dbg::write<<__func__<<": ";
+        if (!is_valid_value(value1)) {
+            dbg::write << __func__ << ": ";
+        }
         dbg::invalid_value("value2");
         dbg::print();
     }
 
-    if (!is_valid_value(value1) || !is_valid_value(value2))
+    if (!is_valid_value(value1) || !is_valid_value(value2)) {
         return false;
+    }
 
-    dbg::write<<"poset "<<id<<", ";
+    dbg::write << "poset " << id << ", ";
     if (!is_value_in_poset(id, value1)) {
-        dbg::write<<"element \""<<value1<<"\" or \""<<value2<<"\" does not exist";
+        dbg::write << "element \"" << value1 << "\" or \"" << value2
+                   << "\" does not exist";
         dbg::print();
         return false;
     }
 
     if (!is_value_in_poset(id, value2)) {
-        dbg::write<<"element \""<<value1<<"\" or \""<<value2<<"\" does not exist";
+        dbg::write << "element \"" << value1 << "\" or \"" << value2
+                   << "\" does not exist";
         dbg::print();
         return false;
     }
 
     dbg::relation(value1, value2);
     if (!find_path(id, value1, value2)) {
-        dbg::write<<" does not exist";
+        dbg::write << " does not exist";
         dbg::print();
         return false;
     }
 
     if (!can_delete_relation(id, value1, value2)) {
-        dbg::write<<" cannot be deleted";
+        dbg::write << " cannot be deleted";
         dbg::print();
         return false;
     }
@@ -456,24 +489,28 @@ bool poset_del(unsigned long id, char const* value1, char const* value2) {
     unsigned long value2_id = values_ids->at(value2);
     delete_edge(id, value1_id, value2_id);
 
-    std::vector<unsigned long> from_list1 = find_all_with_edge_to(id, value1_id);
+    std::vector<unsigned long> from_list1 =
+            find_all_with_edge_to(id, value1_id);
     std::vector<unsigned long> to_list1 = {value2_id};
 
     std::vector<unsigned long> from_list2 = {value1_id};
-    std::vector<unsigned long>* to_list2 = &poset::get_adjacency_list(id)->at(value2_id);
+    std::vector<unsigned long>* to_list2 =
+            &poset::get_adjacency_list(id)->at(value2_id);
 
     add_all_edges_between(id, from_list1, to_list1);
     add_all_edges_between(id, from_list2, *to_list2);
 
-    dbg::write<<" deleted";
+    dbg::write << " deleted";
     dbg::print();
+
     return true;
 }
 
 bool poset_test(unsigned long id, char const* value1, char const* value2) {
 
-    dbg::write<<fprefix<<id<<", \""<<(value1? value1 : "NULL")<<"\""
-              <<", \""<<(value2? value2 : "NULL")<<"\""<<fsuffix;
+    dbg::write << fprefix << id << ", \"" << (value1 ? value1 : "NULL") << "\""
+               << ", \"" << (value2 ? value2 : "NULL") << "\"" << fsuffix;
+
     if (!poset_exists(id)) {
         dbg::poset_does_not_exist(id);
         dbg::print();
@@ -486,30 +523,32 @@ bool poset_test(unsigned long id, char const* value1, char const* value2) {
     }
 
     if (!is_valid_value(value2)) {
-        if (!is_valid_value(value1))
-            dbg::write<<__func__<<": ";
+        if (!is_valid_value(value1)) {
+            dbg::write << __func__ << ": ";
+        }
         dbg::invalid_value("value2");
         dbg::print();
     }
 
-    if (!is_valid_value(value1) || !is_valid_value(value2))
+    if (!is_valid_value(value1) || !is_valid_value(value2)) {
         return false;
+    }
 
-    dbg::write<<"poset "<<id<<", ";
+    dbg::write << "poset " << id << ", ";
     if (!is_value_in_poset(id, value1) || !is_value_in_poset(id, value2)) {
-        dbg::write<<"element \""<<value1<<"\" or \""<<value2<<"\" does not exist";
+        dbg::write << "element \"" << value1 << "\" or \"" << value2
+                   << "\" does not exist";
         dbg::print();
         return false;
     }
 
     dbg::relation(value1, value2);
     if (find_path(id, value1, value2)) {
-        dbg::write<<" exists";
+        dbg::write << " exists";
         dbg::print();
         return true;
-    }
-    else {
-        dbg::write<<" does not exist";
+    } else {
+        dbg::write << " does not exist";
         dbg::print();
         return false;
     }
@@ -517,7 +556,8 @@ bool poset_test(unsigned long id, char const* value1, char const* value2) {
 
 void poset_clear(unsigned long id) {
 
-    dbg::write<<fprefix<<id<<fsuffix;
+    dbg::write << fprefix << id << fsuffix;
+
     if (!poset_exists(id)) {
         dbg::poset_does_not_exist(id);
         dbg::print();
@@ -527,10 +567,10 @@ void poset_clear(unsigned long id) {
     poset::get_values_list(id)->clear(); // TOASK: dk if we have to additionally delete these strings by hand
     poset::get_values_ids(id)->clear();
     poset::get_adjacency_list(id)->clear();
-    dbg::write<<"poset "<<id<<" cleared";
+
+    dbg::write << "poset " << id << " cleared";
     dbg::print();
 }
-
 
 int main() {
     unsigned long p1;
@@ -687,6 +727,6 @@ int main() {
     assert(poset_test(p1, "A", "B"));
     assert(poset_test(p1, "C", "B"));
     assert(!poset_del(p1, "A", "B"));
-     */
+    */
     return 0;
 }
