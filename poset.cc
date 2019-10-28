@@ -3,7 +3,6 @@
 #include <vector>
 #include <queue>
 #include <cassert>
-#include <cstdarg>
 #include <string>
 #include <sstream>
 #include "poset.h"
@@ -11,6 +10,8 @@
 #define fprefix __func__<<"("
 #define fsuffix ")\n"<<__func__<<": "
 
+
+// to uncomment
 #define NDEBUG
 
 
@@ -38,6 +39,8 @@ namespace {
         #endif
     }
 
+    // TODO: better plan these functions, to make the write's in main functions clearer; tidy up a lot
+
     void poset_does_not_exist(unsigned long id) {
         write<<"poset "<<id<<" does not exist";
     }
@@ -59,9 +62,9 @@ namespace {
     }
   }
 
-  // TOASK: don't know how to neatly group these getters and setters with the restriction on using classes
-  // Is it better this way or to just leave them as normal functions like those below (and call them
-  // set_poset_deleted (for set_deleted), poset::get_values_list etc?
+  // TOASK: don't know how to neatly group these getters and setters with the restriction
+  // on using classes. Is it better this way or to just leave them as normal functions
+  // like those below (and call them set_poset_deleted (for set_deleted), poset::get_values_list etc?
   // Getters and setters for posets
   namespace poset {
     void set_deleted(unsigned long poset_id, bool value) {
