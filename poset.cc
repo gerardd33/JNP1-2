@@ -8,8 +8,11 @@
 #define NDEBUG
 
 using Values_list = std::vector<std::string>;
+// A list of values present in the poset.
 using Values_ids = std::unordered_map<std::string, unsigned long>;
+// A map matching the values to their ids in the poset
 using Adjacency_list = std::vector<std::vector<unsigned long>>;
+// An adjacency list storing the edges in the graph representation of the poset
 using Poset = std::tuple<bool, Values_list, Values_ids, Adjacency_list>;
 // The bool indicates whether the poset is deleted.
 
@@ -171,14 +174,6 @@ namespace {
 }
 
 
-
-
-
-
-
-
-
-
 unsigned long poset_new() {
 
     Poset poset;
@@ -210,11 +205,11 @@ bool poset_insert(unsigned long id, char const *value) {
         return false;
 
     std::string new_value(value);
-    unsigned long new_id = get_poset_adjacency_list(id)->size();
+    unsigned long new_value_id = get_poset_adjacency_list(id)->size();
     std::vector<unsigned long> empty_vec;
 
     get_poset_values_list(id)->push_back(new_value);
-    get_poset_values_ids(id)->insert(std::make_pair(new_value, new_id));
+    get_poset_values_ids(id)->insert(std::make_pair(new_value, new_value_id));
     get_poset_adjacency_list(id)->push_back(empty_vec);
 
 #ifndef NDEBUG
@@ -237,11 +232,10 @@ bool poset_remove(unsigned long id, char const *value) {
     // 2. put nodes to which the removed node has an edge in a vector2
     // 3. create new edges between all nodes in vector1 and vector2
 
-    Values_ids* values_ids = get_poset_values_ids(id);
     Adjacency_list* adjacency_list = get_poset_adjacency_list(id);
-    unsigned long value_id = values_ids->at(value);
+    unsigned long value_id = get_poset_values_ids(id)->at(value);
 
-    values_ids->erase(value);
+    get_poset_values_ids(id)->erase(value);
     get_poset_values_list(id)->at(value_id).clear();
 
     std::vector<unsigned long> from = find_nodes_with_edge_to(id, value_id);
