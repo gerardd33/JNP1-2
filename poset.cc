@@ -576,6 +576,7 @@ int main() {
   unsigned long p1;
 
   p1 = jnp1::poset_new();
+  jnp1::poset_delete(p1);
 
   /*
   p1 = poset_new();
