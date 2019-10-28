@@ -14,13 +14,10 @@
 
 // A list of values present in the poset
 using Values_list = std::vector<std::string>;
-
 // A map matching the values to their ids in the poset
 using Values_ids = std::unordered_map<std::string, unsigned long>;
-
 // An adjacency list storing the edges in the graph representation of the poset
 using Adjacency_list = std::vector<std::vector<unsigned long>>;
-
 // The bool indicates whether the poset is deleted
 using Poset = std::tuple<bool, Values_list, Values_ids, Adjacency_list>;
 
@@ -67,6 +64,7 @@ namespace {
   // like those below (and call them set_poset_deleted (for set_deleted), poset::get_values_list etc?
   // Getters and setters for posets
   namespace poset {
+
     void set_deleted(unsigned long poset_id, bool value) {
       std::get<0>(posets[poset_id]) = value;
     }
@@ -215,7 +213,6 @@ namespace {
     delete_edge(id, value1_id, value2_id);
     bool result = !find_path(id, value1, value2);
     add_edge(id, value1_id, value2_id);
-
     return result;
   }
 }
@@ -234,7 +231,6 @@ namespace jnp1 {
 
     dbg::write << "poset " << next_poset_id << " created";
     dbg::print();
-
     return next_poset_id++;
   }
 
@@ -271,7 +267,6 @@ namespace jnp1 {
 
     dbg::write << "poset " << id << " contains " << result << " element(s)";
     dbg::print();
-
     return result;
   }
 
@@ -310,7 +305,6 @@ namespace jnp1 {
 
     dbg::write << "element \"" << value << "\" inserted";
     dbg::print();
-
     return true;
   }
 
@@ -347,17 +341,14 @@ namespace jnp1 {
 
     std::vector<unsigned long> edges_from_value =
             find_all_with_edge_to(id, value_id);
-
     std::vector<unsigned long> *edges_to_value = &adjacency_list->at(value_id);
 
     delete_all_edges_from(id, edges_from_value, value_id);
     add_all_edges_between(id, edges_from_value, *edges_to_value);
-
     adjacency_list->at(value_id).clear();
 
     dbg::write << "element \"" << value << "\" removed";
     dbg::print();
-
     return true;
   }
 
@@ -425,7 +416,6 @@ namespace jnp1 {
 
     dbg::write << " added";
     dbg::print();
-
     return true;
   }
 
@@ -503,7 +493,6 @@ namespace jnp1 {
 
     dbg::write << " deleted";
     dbg::print();
-
     return true;
   }
 
