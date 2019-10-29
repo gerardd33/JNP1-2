@@ -10,7 +10,7 @@
 #define fsuffix ")\n"<<__func__<<": "
 
 // to uncomment
-#define NDEBUG
+//#define NDEBUG
 
 //TODO: Change this vector to a map or set
 // A list of values present in the poset
@@ -37,15 +37,15 @@ unsigned long* next_poset_id() {
 
 namespace dbg {
 
-  std::stringstream* write() {
-    static std::stringstream write;
-    return &write;
-  }
+std::stringstream* write() {
+  static std::stringstream write;
+  return &write;
+}
 
 void print() {
 #ifndef NDEBUG
-  std::cerr << write.str() << "\n";
-      write.str("");
+  std::cerr << (*write()).str() << "\n";
+  (*write()).str("");
 #endif
 }
 
