@@ -28,12 +28,7 @@ std::vector<Poset>* posets() {
   static std::vector<Poset> posets;
   return &posets;
 }
-
-unsigned long* next_poset_id() {
-  static unsigned long next_poset_id = 0;
-  return &next_poset_id;
-}
-//unsigned long next_poset_id = 0;
+unsigned long next_poset_id = 0;
 
 namespace dbg {
 
@@ -98,7 +93,7 @@ Adjacency_list* get_adjacency_list(unsigned long poset_id) {
 }
 
 bool poset_exists(unsigned long id) {
-  return id < *next_poset_id() && !poset::is_deleted(id);
+  return id < next_poset_id && !poset::is_deleted(id);
 }
 
 bool is_valid_value(char const* value) {
@@ -236,18 +231,18 @@ unsigned long poset_new() {
 
   Poset poset;
   posets()->push_back(poset);
-  poset::set_deleted(*next_poset_id(), false);
+  poset::set_deleted(next_poset_id, false);
 
-  *(dbg::write)() << "poset " << (*next_poset_id()) << " created";
+  *(dbg::write)() << "poset " << next_poset_id << " created";
   dbg::print();
-  return (*next_poset_id())++;
+  return next_poset_id++;
 }
 
 void poset_delete(unsigned long id) {
 
   *(dbg::write)() << fprefix << id << fsuffix;
 
-  if (id >= *next_poset_id() || poset::is_deleted(id)) {
+  if (id >= next_poset_id || poset::is_deleted(id)) {
     dbg::poset_does_not_exist(id);
     dbg::print();
     return;
