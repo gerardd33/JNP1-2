@@ -1,5 +1,6 @@
 #include <iostream>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 #include <queue>
 #include <cassert>
@@ -14,13 +15,16 @@
 
 //TODO: Change this vector to a map or set
 // A list of values present in the poset
-using Values_list = std::vector<std::string>;
+//using Values_list = std::vector<std::string>;
 // A map matching the values to their ids in the poset
-using Values_ids = std::unordered_map<std::string, unsigned long>; // zmienic na referencje
+using Values_ids = std::unordered_map<std::string, unsigned long>;
 // An adjacency list storing the edges in the graph representation of the poset
 using Adjacency_list = std::vector<std::vector<unsigned long>>;
 // The bool indicates whether the poset is deleted
-using Poset = std::tuple<bool, Values_list, Values_ids, Adjacency_list>;
+using Poset = std::tuple<bool, Values_ids, Adjacency_list>;
+
+// TODO: Change posets vector to unordered map and other stuff too
+using Posets = std::unordered_map<unsigned long, Poset>;
 
 namespace {
 
@@ -78,16 +82,18 @@ bool is_deleted(unsigned long poset_id) {
   return std::get<0>((*(posets()))[poset_id]);
 }
 
+/*
 Values_list* get_values_list(unsigned long poset_id) {
   return &std::get<1>((*(posets()))[poset_id]);
 }
+*/
 
 Values_ids* get_values_ids(unsigned long poset_id) {
-  return &std::get<2>((*(posets()))[poset_id]);
+  return &std::get<1>((*(posets()))[poset_id]);
 }
 
 Adjacency_list* get_adjacency_list(unsigned long poset_id) {
-  return &std::get<3>((*(posets()))[poset_id]);
+  return &std::get<2>((*(posets()))[poset_id]);
 }
 
 }
@@ -155,8 +161,9 @@ bool bfs(unsigned long id, unsigned long start_value_id,
          unsigned long destination_value_id) {
 
   Adjacency_list* adjacency_list = poset::get_adjacency_list(id);
-  std::vector<bool> visited(adjacency_list->size(), false);
+  std::unordered_set<unsigned long> visited;
   std::queue<unsigned long> queue;
+  visited.insert(start_value_id);
   queue.push(start_value_id);
 
   while (!queue.empty()) {
@@ -169,8 +176,8 @@ bool bfs(unsigned long id, unsigned long start_value_id,
     }
 
     for (unsigned long neighbour : adjacency_list->at(curr_value_id)) {
-      if (!visited[neighbour]) {
-        visited[neighbour] = true;
+      if (visited.find(neighbour) == visited.end()) {
+        visited.insert(neighbour);
         queue.push(neighbour);
       }
     }
@@ -248,7 +255,7 @@ void poset_delete(unsigned long id) {
     return;
   }
 
-  poset::get_values_list(id)->clear();
+  //poset::get_values_list(id)->clear();
   poset::get_values_ids(id)->clear();
   poset::get_adjacency_list(id)->clear();
   poset::set_deleted(id, true);
@@ -303,7 +310,7 @@ bool poset_insert(unsigned long id, char const *value) {
   unsigned long new_value_id = poset::get_adjacency_list(id)->size();
   std::vector<unsigned long> empty_vec;
 
-  poset::get_values_list(id)->push_back(new_value);
+  //poset::get_values_list(id)->push_back(new_value);
   poset::get_values_ids(id)->insert(std::make_pair(new_value, new_value_id));
   poset::get_adjacency_list(id)->push_back(empty_vec);
 
@@ -341,7 +348,7 @@ bool poset_remove(unsigned long id, char const *value) {
   unsigned long value_id = poset::get_values_ids(id)->at(value);
 
   poset::get_values_ids(id)->erase(value);
-  poset::get_values_list(id)->at(value_id).clear();
+  //poset::get_values_list(id)->at(value_id).clear();
 
   std::vector<unsigned long> edges_from_value =
       find_all_with_edge_to(id, value_id);
@@ -560,7 +567,7 @@ void poset_clear(unsigned long id) {
     return;
   }
 
-  poset::get_values_list(id)->clear();
+  //poset::get_values_list(id)->clear();
   poset::get_values_ids(id)->clear();
   poset::get_adjacency_list(id)->clear();
 
