@@ -7,8 +7,8 @@
 #include <sstream>
 #include "poset.h"
 
-#define dbg_prefix __func__<<"("
-#define dbg_suffix ")\n"<<__func__<<": "
+#define dbg_prefix __func__ << "("
+#define dbg_suffix ")\n" << __func__ << ": "
 #define dbg_value(value) "\"" << (value ? value : "NULL") << "\""
 #define dbg_relation(value1, value2) "relation (\"" << value1 << "\", \""<< value2 << "\")"
 
@@ -362,14 +362,7 @@ namespace jnp1 {
 
     dbg::write() << "poset " << id << ", ";
 
-    if (!is_value_in_poset(id, value1)) {
-      dbg::write() << "element " << dbg_value(value1) << " or "
-                   << dbg_value(value2) << " does not exist";
-      dbg::print();
-      return false;
-    }
-
-    if (!is_value_in_poset(id, value2)) {
+    if (!is_value_in_poset(id, value1) || !is_value_in_poset(id, value2)) {
       dbg::write() << "element " << dbg_value(value1) << " or "
                    << dbg_value(value2) << " does not exist";
       dbg::print();
@@ -422,14 +415,7 @@ namespace jnp1 {
     }
 
     dbg::write() << "poset " << id << ", ";
-    if (!is_value_in_poset(id, value1)) {
-      dbg::write() << "element " << dbg_value(value1) << " or "
-                   << dbg_value(value2) << " does not exist";
-      dbg::print();
-      return false;
-    }
-
-    if (!is_value_in_poset(id, value2)) {
+    if (!is_value_in_poset(id, value1) || !is_value_in_poset(id, value2)) {
       dbg::write() << "element " << dbg_value(value1) << " or "
                    << dbg_value(value2) << " does not exist";
       dbg::print();
