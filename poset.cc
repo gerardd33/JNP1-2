@@ -45,14 +45,6 @@ namespace {
       write() << "poset " << id << " does not exist";
     }
 
-    void element_does_not_exist(char const* value) {
-      write() << "element \"" << value << "\" does not exist";
-    }
-
-    void element_already_exists(char const* value) {
-      write() << "element \"" << value << "\" already exists";
-    }
-
     void invalid_value(const std::string& name) {
       write() << "invalid " << name << " (NULL)";
     }
@@ -273,7 +265,7 @@ namespace jnp1 {
     dbg::write() << "poset " << id << ", ";
 
     if (is_value_in_poset(id, value)) {
-      dbg::element_already_exists(value);
+      dbg::write() << "element " << dbg_value(value) << " already exists";
       dbg::print();
       return false;
     }
@@ -309,7 +301,7 @@ namespace jnp1 {
     dbg::write() << "poset " << id << ", ";
 
     if (!is_value_in_poset(id, value)) {
-      dbg::element_does_not_exist(value);
+      dbg::write() << "element " << dbg_value(value) << " does not exist";
       dbg::print();
       return false;
     }
