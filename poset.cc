@@ -15,7 +15,7 @@
 // A map storing the values and matching them to their ids in the poset
 using Values_map = std::unordered_map<std::string, unsigned long>;
 // An adjacency list storing the edges in the graph representation of the poset
-using Adjacency_list = std::vector<std::vector<unsigned long>>;
+using Adjacency_list = std::unordered_map<unsigned long, std::vector<unsigned long>>;
 
 using Poset = std::tuple<Values_map, Adjacency_list>;
 using Posets = std::unordered_map<unsigned long, Poset>;
@@ -275,7 +275,7 @@ namespace jnp1 {
     std::vector<unsigned long> empty_vec;
 
     poset::get_Values_map(id)->insert(std::make_pair(new_value, new_value_id));
-    poset::get_Adjacency_list(id)->push_back(empty_vec);
+    poset::get_Adjacency_list(id)->insert(std::make_pair(new_value_id, empty_vec));
 
     dbg::write() << "element " << dbg_value(value) << " inserted";
     dbg::print();
@@ -317,7 +317,9 @@ namespace jnp1 {
 
     delete_all_edges_from(id, edges_from_value, value_id);
     add_all_edges_between(id, edges_from_value, *edges_to_value);
-    adjacency_list->at(value_id).clear();
+
+    //adjacency_list->at(value_id).clear();
+    adjacency_list->erase(value_id);
 
     dbg::write() << "element " << dbg_value(value) << " removed";
     dbg::print();
