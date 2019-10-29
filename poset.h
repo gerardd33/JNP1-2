@@ -2,8 +2,8 @@
 #define __POSET_H__
 
 #ifdef __cplusplus
+  #include <iostream>
   #include <cstddef>
-  #include <iostream> // chyba to rozwiazauje problem z cerr (static order initialization fiasco)
   namespace jnp1 {
     extern "C" {
 #else
@@ -33,5 +33,6 @@ void poset_clear(unsigned long id);
     }
   }
 #endif
+
 
 #endif //__POSET_H__
