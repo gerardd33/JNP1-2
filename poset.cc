@@ -385,13 +385,7 @@ namespace jnp1 {
     }
 
     dbg::relation(value1, value2);
-    if (find_path(id, value1, value2)) {
-      dbg::write() << " exists";
-      dbg::print();
-      return false;
-    }
-
-    if (find_path(id, value2, value1)) {
+    if (find_path(id, value1, value2) || find_path(id, value2, value1)) {
       dbg::write() << " cannot be added";
       dbg::print();
       return false;
@@ -453,7 +447,7 @@ namespace jnp1 {
 
     dbg::relation(value1, value2);
     if (!find_path(id, value1, value2)) {
-      dbg::write() << " does not exist";
+      dbg::write() << " cannot be deleted";
       dbg::print();
       return false;
     }
