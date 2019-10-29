@@ -188,11 +188,16 @@ namespace {
     unsigned long value1_id = Values_map->at(value1);
     unsigned long value2_id = Values_map->at(value2);
 
+    if (value1_id == value2_id) {
+      return false;
+    }
+
     delete_edge(id, value1_id, value2_id);
     bool result = !find_path(id, value1, value2);
     add_edge(id, value1_id, value2_id);
     return result;
   }
+
 }
 
 namespace jnp1 {
@@ -317,8 +322,6 @@ namespace jnp1 {
 
     delete_all_edges_from(id, edges_from_value, value_id);
     add_all_edges_between(id, edges_from_value, *edges_to_value);
-
-    //adjacency_list->at(value_id).clear();
     adjacency_list->erase(value_id);
 
     dbg::write() << "element " << dbg_value(value) << " removed";
