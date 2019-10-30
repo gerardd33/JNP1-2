@@ -15,12 +15,16 @@
 // A map storing the values and matching them to their ids in the poset
 using Values_map = std::unordered_map<std::string, unsigned long>;
 // An adjacency list storing the edges in the graph representation of the poset
-using Adjacency_list = std::unordered_map<unsigned long, std::vector<unsigned long>>;
+
+using Neighbours = std::unordered_set<unsigned long>;
+
+using Adjacency_list = std::unordered_map<unsigned long, Neighbours>;
 
 using Poset = std::tuple<Values_map, Adjacency_list>;
 using Posets = std::unordered_map<unsigned long, Poset>;
 
-using AdjListIterator = std::unordered_map<unsigned long, std::vector<unsigned long>>::iterator;
+using AdjListIterator = Adjacency_list::iterator;
+using NeighboursIterator = Neighbours::iterator;
 
 namespace {
 
@@ -65,6 +69,11 @@ namespace {
 
   }
 
+  unsigned long getNextValueId() {
+    static unsigned long next_value_id = 0;
+    return next_value_id++;
+  }
+
   bool poset_exists(unsigned long id) {
     return posets().find(id) != posets().end();
   }
@@ -83,16 +92,19 @@ namespace {
                 unsigned long to_value_id) {
 
     Adjacency_list* adjacency_list = poset::get_Adjacency_list(id);
-    adjacency_list->at(from_value_id).push_back(to_value_id);
+
+    Neighbours* neighbours = &adjacency_list->at(from_value_id);
+
+    neighbours->insert(to_value_id);
   }
 
   // Adds all the possible edges between elements from from_list and to_list.
   void add_all_edges_between(unsigned long id,
-                             const std::vector<unsigned long>& from_list,
-                             const std::vector<unsigned long>& to_list) {
+                             const std::unordered_set<unsigned long>& from_set,
+                             const std::unordered_set<unsigned long>& to_set) {
 
-    for (unsigned long from_value_id : from_list) {
-      for (unsigned long to_value_id : to_list) {
+    for (unsigned long from_value_id : from_set) {
+      for (unsigned long to_value_id : to_set) {
         add_edge(id, from_value_id, to_value_id);
       }
     }
@@ -102,24 +114,18 @@ namespace {
   void delete_edge(unsigned long id, unsigned long from_value_id,
                    unsigned long to_value_id) {
 
-    std::vector<unsigned long>* neighbours =
+    Neighbours* neighbours =
             &poset::get_Adjacency_list(id)->at(from_value_id);
 
-    for (size_t i = 0; i < neighbours->size(); i++) {
-      if (neighbours->at(i) == to_value_id) {
-        std::swap(neighbours->at(i), neighbours->back());
-        neighbours->pop_back();
-        i--;
-      }
-    }
+    neighbours->erase(to_value_id);
   }
 
   // Removes all edges from nodes in vector from_list to the node to_value_id.
   void delete_all_edges_from(unsigned long id,
-                             const std::vector<unsigned long>& from_list,
+                             const std::unordered_set<unsigned long>& from_set,
                              unsigned long to_value_id) {
 
-    for (unsigned long curr_value_id : from_list) {
+    for (unsigned long curr_value_id : from_set) {
       delete_edge(id, curr_value_id, to_value_id);
     }
   }
@@ -164,17 +170,17 @@ namespace {
 
   // Returns a vector of all nodes from which there exists
   // an edge to the node corresponding to the given value.
-  std::vector<unsigned long> find_all_with_edge_to(unsigned long id,
+  std::unordered_set<unsigned long> find_all_with_edge_to(unsigned long id,
                                                    unsigned long value_id) {
 
     Adjacency_list* adjacency_list = poset::get_Adjacency_list(id);
-    std::vector<unsigned long> result;
+    std::unordered_set<unsigned long> result;
 
     for (AdjListIterator it = adjacency_list->begin(); it != adjacency_list->end(); it++) {
       unsigned long curr_value_id = it->first;
       for (unsigned long neighbour_value_id : adjacency_list->at(curr_value_id)) {
         if (neighbour_value_id == value_id) {
-          result.push_back(curr_value_id);
+          result.insert(curr_value_id);
           break;
         }
       }
@@ -277,11 +283,11 @@ namespace jnp1 {
     }
 
     std::string new_value(value);
-    unsigned long new_value_id = poset::get_Adjacency_list(id)->size();
-    std::vector<unsigned long> empty_vec;
+    unsigned long new_value_id = getNextValueId();
+    std::unordered_set<unsigned long> empty_set;
 
     poset::get_Values_map(id)->insert(std::make_pair(new_value, new_value_id));
-    poset::get_Adjacency_list(id)->insert(std::make_pair(new_value_id, empty_vec));
+    poset::get_Adjacency_list(id)->insert(std::make_pair(new_value_id, empty_set));
 
     dbg::write() << "element " << dbg_value(value) << " inserted";
     dbg::print();
@@ -317,14 +323,13 @@ namespace jnp1 {
 
     poset::get_Values_map(id)->erase(value);
 
-    std::vector<unsigned long> edges_from_value =
-            find_all_with_edge_to(id, value_id);
-    std::vector<unsigned long> *edges_to_value = &adjacency_list->at(value_id);
+    std::unordered_set<unsigned long> edges_from_value =
+        find_all_with_edge_to(id, value_id);
+    std::unordered_set<unsigned long> *edges_to_value =
+        &adjacency_list->at(value_id);
 
     delete_all_edges_from(id, edges_from_value, value_id);
     add_all_edges_between(id, edges_from_value, *edges_to_value);
-
-    //adjacency_list->at(value_id).clear();
     adjacency_list->erase(value_id);
 
     dbg::write() << "element " << dbg_value(value) << " removed";
@@ -379,7 +384,7 @@ namespace jnp1 {
     Values_map *Values_map = poset::get_Values_map(id);
     unsigned long value1_id = Values_map->at(value1);
     unsigned long value2_id = Values_map->at(value2);
-    poset::get_Adjacency_list(id)->at(value1_id).push_back(value2_id);
+    poset::get_Adjacency_list(id)->at(value1_id).insert(value2_id);
 
     dbg::write() << " added";
     dbg::print();
@@ -440,15 +445,15 @@ namespace jnp1 {
     unsigned long value2_id = Values_map->at(value2);
     delete_edge(id, value1_id, value2_id);
 
-    std::vector<unsigned long> from_list1 = find_all_with_edge_to(id, value1_id);
-    std::vector<unsigned long> to_list1 = {value2_id};
+    std::unordered_set<unsigned long> from_set1 = find_all_with_edge_to(id, value1_id);
+    std::unordered_set<unsigned long> to_set1 = {value2_id};
 
-    std::vector<unsigned long> from_list2 = {value1_id};
-    std::vector<unsigned long> *to_list2 =
-            &poset::get_Adjacency_list(id)->at(value2_id);
+    std::unordered_set<unsigned long> from_set2 = {value1_id};
+    std::unordered_set<unsigned long> *to_set2 =
+        &poset::get_Adjacency_list(id)->at(value2_id);
 
-    add_all_edges_between(id, from_list1, to_list1);
-    add_all_edges_between(id, from_list2, *to_list2);
+    add_all_edges_between(id, from_set1, to_set1);
+    add_all_edges_between(id, from_set2, *to_set2);
 
     dbg::write() << " deleted";
     dbg::print();
