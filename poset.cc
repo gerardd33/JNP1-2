@@ -1,7 +1,6 @@
 #include <iostream>
 #include <unordered_map>
 #include <unordered_set>
-#include <vector>
 #include <queue>
 #include <cassert>
 #include <sstream>
@@ -14,17 +13,14 @@
 
 // A map storing the values and matching them to their ids in the poset
 using Values_map = std::unordered_map<std::string, unsigned long>;
-// An adjacency list storing the edges in the graph representation of the poset
-
+// A graph representation of the poset, each node in the map has it's neighbours in the set
 using Neighbours = std::unordered_set<unsigned long>;
-
 using Adjacency_list = std::unordered_map<unsigned long, Neighbours>;
+using AdjListIter = Adjacency_list::iterator;
 
 using Poset = std::tuple<Values_map, Adjacency_list>;
 using Posets = std::unordered_map<unsigned long, Poset>;
 
-using AdjListIterator = Adjacency_list::iterator;
-using NeighboursIterator = Neighbours::iterator;
 
 namespace {
 
@@ -56,7 +52,7 @@ namespace {
     }
   }
 
-  // Getters and setters for posets
+  // Getters for posets
   namespace poset {
 
     Values_map* get_Values_map(unsigned long poset_id) {
@@ -98,7 +94,7 @@ namespace {
     neighbours->insert(to_value_id);
   }
 
-  // Adds all the possible edges between elements from from_list and to_list.
+  // Adds all the possible edges between elements from from_set and to_set.
   void add_all_edges_between(unsigned long id,
                              const std::unordered_set<unsigned long>& from_set,
                              const std::unordered_set<unsigned long>& to_set) {
@@ -120,7 +116,7 @@ namespace {
     neighbours->erase(to_value_id);
   }
 
-  // Removes all edges from nodes in vector from_list to the node to_value_id.
+  // Removes all edges from nodes in set from_set to the node to_value_id.
   void delete_all_edges_from(unsigned long id,
                              const std::unordered_set<unsigned long>& from_set,
                              unsigned long to_value_id) {
@@ -168,7 +164,7 @@ namespace {
     return bfs(id, start_value_id, destination_value_id);
   }
 
-  // Returns a vector of all nodes from which there exists
+  // Returns a set of all nodes from which there exists
   // an edge to the node corresponding to the given value.
   std::unordered_set<unsigned long> find_all_with_edge_to(unsigned long id,
                                                    unsigned long value_id) {
@@ -176,7 +172,7 @@ namespace {
     Adjacency_list* adjacency_list = poset::get_Adjacency_list(id);
     std::unordered_set<unsigned long> result;
 
-    for (AdjListIterator it = adjacency_list->begin(); it != adjacency_list->end(); it++) {
+    for (AdjListIter it = adjacency_list->begin(); it != adjacency_list->end(); it++) {
       unsigned long curr_value_id = it->first;
       for (unsigned long neighbour_value_id : adjacency_list->at(curr_value_id)) {
         if (neighbour_value_id == value_id) {
@@ -445,7 +441,8 @@ namespace jnp1 {
     unsigned long value2_id = Values_map->at(value2);
     delete_edge(id, value1_id, value2_id);
 
-    std::unordered_set<unsigned long> from_set1 = find_all_with_edge_to(id, value1_id);
+    std::unordered_set<unsigned long> from_set1 =
+        find_all_with_edge_to(id, value1_id);
     std::unordered_set<unsigned long> to_set1 = {value2_id};
 
     std::unordered_set<unsigned long> from_set2 = {value1_id};
