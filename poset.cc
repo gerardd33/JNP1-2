@@ -20,6 +20,8 @@ using Adjacency_list = std::unordered_map<unsigned long, std::vector<unsigned lo
 using Poset = std::tuple<Values_map, Adjacency_list>;
 using Posets = std::unordered_map<unsigned long, Poset>;
 
+using AdjListIterator = std::unordered_map<unsigned long, std::vector<unsigned long>>::iterator;
+
 namespace {
 
   Posets& posets() {
@@ -168,8 +170,8 @@ namespace {
     Adjacency_list* adjacency_list = poset::get_Adjacency_list(id);
     std::vector<unsigned long> result;
 
-    size_t adj_list_size = adjacency_list->size();
-    for (size_t curr_value_id = 0; curr_value_id < adj_list_size; curr_value_id++) {
+    for (AdjListIterator it = adjacency_list->begin(); it != adjacency_list->end(); it++) {
+      unsigned long curr_value_id = it->first;
       for (unsigned long neighbour_value_id : adjacency_list->at(curr_value_id)) {
         if (neighbour_value_id == value_id) {
           result.push_back(curr_value_id);
@@ -197,7 +199,6 @@ namespace {
     add_edge(id, value1_id, value2_id);
     return result;
   }
-
 }
 
 namespace jnp1 {
@@ -322,6 +323,8 @@ namespace jnp1 {
 
     delete_all_edges_from(id, edges_from_value, value_id);
     add_all_edges_between(id, edges_from_value, *edges_to_value);
+
+    //adjacency_list->at(value_id).clear();
     adjacency_list->erase(value_id);
 
     dbg::write() << "element " << dbg_value(value) << " removed";
