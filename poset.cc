@@ -1,10 +1,12 @@
-#include <iostream>
 #include <unordered_map>
 #include <unordered_set>
 #include <queue>
-#include <cassert>
 #include <sstream>
 #include "poset.h"
+
+#ifndef NDEBUG
+#include <iostream>
+#endif
 
 #define dbg_prefix __func__ << "("
 #define dbg_suffix ")\n" << __func__ << ": "
