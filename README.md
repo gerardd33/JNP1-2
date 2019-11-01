@@ -1,2 +1,2 @@
-# JNP1.2
+# JNP1-2
 Poset
