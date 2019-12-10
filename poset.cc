@@ -15,10 +15,9 @@
 
 // A map storing the values and matching them to their ids in the poset
 using Values_map = std::unordered_map<std::string, unsigned long>;
-// A graph representation of the poset, each node in the map has it's neighbours in the set
+// A graph representation of the poset, each node in the map has its neighbours in the set
 using Neighbours = std::unordered_set<unsigned long>;
 using Adjacency_list = std::unordered_map<unsigned long, Neighbours>;
-using AdjListIter = Adjacency_list::iterator;
 
 using Poset = std::tuple<Values_map, Adjacency_list>;
 using Posets = std::unordered_map<unsigned long, Poset>;
@@ -67,7 +66,7 @@ namespace {
 
   }
 
-  unsigned long getNextValueId() {
+  unsigned long get_next_value_id() {
     static unsigned long next_value_id = 0;
     return next_value_id++;
   }
@@ -174,7 +173,7 @@ namespace {
     Adjacency_list* adjacency_list = poset::get_Adjacency_list(id);
     std::unordered_set<unsigned long> result;
 
-    for (AdjListIter it = adjacency_list->begin(); it != adjacency_list->end(); it++) {
+    for (Adjacency_list::iterator it = adjacency_list->begin(); it != adjacency_list->end(); it++) {
       unsigned long curr_value_id = it->first;
       for (unsigned long neighbour_value_id : adjacency_list->at(curr_value_id)) {
         if (neighbour_value_id == value_id) {
@@ -281,7 +280,7 @@ namespace jnp1 {
     }
 
     std::string new_value(value);
-    unsigned long new_value_id = getNextValueId();
+    unsigned long new_value_id = get_next_value_id();
     std::unordered_set<unsigned long> empty_set;
 
     poset::get_Values_map(id)->insert(std::make_pair(new_value, new_value_id));
